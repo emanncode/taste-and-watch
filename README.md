@@ -1,3 +1,30 @@
+# Taste & Watch
+
+**First Commit hackathon (deadline Sept 30) — thematic recipe matchmaking for whatever movie/anime you're watching, pairing TMDB/Jikan media data with Spoonacular recipes.**
+
+## Overview
+
+Taste & Watch takes whatever media a user is watching and suggests a thematic recipe pairing, cross-referencing entertainment APIs with recipe APIs.
+
+## Context
+
+* Hackathon: First Commit (Devpost), beginner-friendly, judged on learning/growth, understanding, creativity, execution, presentation — not raw complexity
+* Deadline: Sept 30, 2026
+* Workflow: Claude = PM (writes design + build prompts), Antigravity ("Agy") = executes design first, then code, Linear = documentation of record
+* Scope call: this is effectively a one-page app (not multi-screen like Soldbay) — the real "screen inventory" is *states* of one page: empty/landing, loading, result (media + recipe), no-match/error
+
+## Stack
+
+Next.js (App Router), Tailwind CSS, shadcn/ui, TMDB or Jikan API (media), Spoonacular API (recipes)
+
+## Not yet decided
+
+* Visual identity (palette/type/layout metaphor) — previous HTML mockup was a throwaway reference only, not final UI
+* Component inventory (expected: search input, media result block, recipe list/cards, skeleton loader, error/empty state)
+* Keyword-matcher logic mapping media genre/tags → recipe search terms
+
+---
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
