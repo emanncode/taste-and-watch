@@ -54,6 +54,7 @@ export async function generateRecommendations(
   });
 
   const customFetch = (url: URL | RequestInfo, init?: RequestInit) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return undiciFetch(url as any, { ...init, dispatcher: ipv4Agent } as any) as unknown as Promise<Response>;
   };
 

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { searchMedia, getMediaDetails, MediaSearchResult, MediaDetails } from "@/lib/services/media";
 import { generateRecommendations, Recommendation } from "@/lib/services/recommendation";
 import { searchRecipe, RecipeDetails } from "@/lib/services/recipe";
+import { searchTutorial, TutorialResult } from "@/lib/services/tutorial";
 
 type AppState =
   | "EMPTY"
@@ -18,6 +19,7 @@ type AppState =
   | "RECOMMENDATIONS_READY"
   | "RECIPE_LOADING"
   | "RECIPE_OPEN"
+  | "TUTORIAL_LOADING"
   | "TUTORIAL_HANDOFF"
   | "ERROR";
 
@@ -27,7 +29,9 @@ export default function TasteAndWatchApp() {
   const [mediaResults, setMediaResults] = useState<MediaSearchResult[]>([]);
   const [selectedMedia, setSelectedMedia] = useState<MediaDetails | null>(null);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [selectedRecommendation, setSelectedRecommendation] = useState<Recommendation | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeDetails | null>(null);
+  const [tutorialResult, setTutorialResult] = useState<TutorialResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -86,6 +90,7 @@ export default function TasteAndWatchApp() {
 
   const handleFetchRecipe = async (rec: Recommendation) => {
     try {
+      setSelectedRecommendation(rec);
       setAppState("RECIPE_LOADING");
       setError(null);
       const recipe = await searchRecipe(rec.recipeQuery);
@@ -102,6 +107,22 @@ export default function TasteAndWatchApp() {
     } catch (err) {
       console.error(err);
       setError("An error occurred while fetching the recipe.");
+      setAppState("ERROR");
+    }
+  };
+
+  const handleFindTutorial = async () => {
+    if (!selectedRecommendation) return;
+    
+    try {
+      setAppState("TUTORIAL_LOADING");
+      setError(null);
+      const result = await searchTutorial(selectedRecommendation.youtubeQuery);
+      setTutorialResult(result);
+      setAppState("TUTORIAL_HANDOFF");
+    } catch (err) {
+      console.error(err);
+      setError("An error occurred while finding a tutorial.");
       setAppState("ERROR");
     }
   };
@@ -251,7 +272,7 @@ export default function TasteAndWatchApp() {
         )}
 
         {/* MEDIA_SELECTED & LATER STATES (Keep Hero context alive) */}
-        {(appState === "MEDIA_SELECTED" || appState === "RECOMMENDATIONS_LOADING" || appState === "RECOMMENDATIONS_READY" || appState === "RECIPE_LOADING" || appState === "RECIPE_OPEN") && selectedMedia && (
+        {(appState === "MEDIA_SELECTED" || appState === "RECOMMENDATIONS_LOADING" || appState === "RECOMMENDATIONS_READY" || appState === "RECIPE_LOADING" || appState === "RECIPE_OPEN" || appState === "TUTORIAL_LOADING" || appState === "TUTORIAL_HANDOFF") && selectedMedia && (
           <div className="w-full mt-24 md:mt-20">
             {appState === "MEDIA_SELECTED" && (
               <button 
@@ -333,6 +354,16 @@ export default function TasteAndWatchApp() {
               <div className="w-full text-center py-20 text-zinc-400 border-t border-zinc-800/50">
                 <UtensilsCrossed className="w-12 h-12 mx-auto mb-4 animate-bounce text-emerald-500" />
                 <p className="animate-pulse text-lg">Searching TheMealDB for the perfect recipe...</p>
+              </div>
+            )}
+
+            {/* TUTORIAL LOADING STATE */}
+            {appState === "TUTORIAL_LOADING" && (
+              <div className="w-full text-center py-20 text-zinc-400 border-t border-zinc-800/50">
+                <div className="w-12 h-12 mx-auto mb-4 animate-bounce text-red-500 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" className="w-full h-full"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+                </div>
+                <p className="animate-pulse text-lg">Finding the best video tutorial...</p>
               </div>
             )}
 
@@ -468,14 +499,69 @@ export default function TasteAndWatchApp() {
                         <ExternalLink className="w-4 h-4" /> Original Recipe Source
                       </a>
                     )}
-                    {/* Placeholder for YouTube / EC-51 */}
-                    <button className="flex items-center gap-2 text-sm bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg transition-colors opacity-50 cursor-not-allowed">
-                      Find Tutorial (Pending EC-51)
+                    <button 
+                      onClick={handleFindTutorial}
+                      className="flex items-center gap-2 text-sm bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg transition-colors"
+                    >
+                      Find Video Tutorial
                     </button>
                   </div>
                 </div>
 
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* TUTORIAL HANDOFF OVERLAY/MODAL */}
+        {appState === "TUTORIAL_HANDOFF" && tutorialResult && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-sm overflow-y-auto">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-y-auto flex flex-col mt-10 mb-10 text-center p-8 relative">
+              <button 
+                onClick={() => setAppState("RECIPE_OPEN")}
+                className="absolute top-6 right-6 p-2 bg-zinc-800/50 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-zinc-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="w-16 h-16 mx-auto mb-6 text-red-500 bg-red-500/10 rounded-full flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+              </div>
+
+              <h3 className="text-2xl font-bold text-zinc-50 mb-4">
+                {tutorialResult.provider === "youtube_search" ? "Search YouTube for Tutorial" : "Tutorial Found!"}
+              </h3>
+              
+              {tutorialResult.thumbnail && (
+                <div className="w-full max-w-sm mx-auto aspect-video rounded-xl overflow-hidden border border-zinc-800 mb-6 bg-zinc-950">
+                  <img 
+                    src={tutorialResult.thumbnail} 
+                    alt={tutorialResult.title}
+                    className="w-full h-full object-cover" 
+                  />
+                </div>
+              )}
+
+              <p className="text-zinc-300 mb-2 font-medium">{tutorialResult.title}</p>
+              {tutorialResult.channelTitle && (
+                <p className="text-zinc-500 text-sm mb-8">by {tutorialResult.channelTitle}</p>
+              )}
+
+              <a 
+                href={tutorialResult.url}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full max-w-sm mx-auto flex items-center justify-center gap-2 text-lg bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-4 rounded-xl transition-colors mb-4"
+              >
+                Watch on YouTube <ExternalLink className="w-5 h-5" />
+              </a>
+              
+              <button 
+                onClick={() => setAppState("RECIPE_OPEN")}
+                className="text-zinc-400 hover:text-zinc-200 transition-colors text-sm"
+              >
+                Back to Recipe
+              </button>
             </div>
           </div>
         )}
