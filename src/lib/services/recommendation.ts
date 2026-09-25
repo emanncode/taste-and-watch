@@ -53,8 +53,8 @@ export async function generateRecommendations(
     }
   });
 
-  const customFetch = (url: string, init?: RequestInit) => {
-    return undiciFetch(url, { ...init, dispatcher: ipv4Agent } as any) as unknown as Promise<Response>;
+  const customFetch = (url: URL | RequestInfo, init?: RequestInit) => {
+    return undiciFetch(url as any, { ...init, dispatcher: ipv4Agent } as any) as unknown as Promise<Response>;
   };
 
   // Initialize the provider with the explicit key and our IPv4-enforced fetch
