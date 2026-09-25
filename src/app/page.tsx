@@ -555,6 +555,17 @@ export default function TasteAndWatchApp() {
               >
                 Watch on YouTube <ExternalLink className="w-5 h-5" />
               </a>
+
+              {tutorialResult.provider === "youtube_api" && selectedRecommendation && (
+                <a 
+                  href={`https://www.youtube.com/results?search_query=${encodeURIComponent(selectedRecommendation.youtubeQuery)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full max-w-sm mx-auto flex items-center justify-center gap-2 text-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium px-6 py-3 rounded-xl transition-colors mb-6"
+                >
+                  More tutorials on YouTube <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
               
               <button 
                 onClick={() => setAppState("RECIPE_OPEN")}
