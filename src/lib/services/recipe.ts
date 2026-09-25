@@ -1,4 +1,5 @@
 "use server";
+import { ipv4Fetch } from "./fetch";
 
 export interface RecipeIngredient {
   ingredient: string;
@@ -25,7 +26,7 @@ export async function searchRecipe(query: string): Promise<RecipeDetails | null>
   }
 
   try {
-    const res = await fetch(
+    const res = await ipv4Fetch(
       `https://www.themealdb.com/api/json/v1/${apiKey}/search.php?s=${encodeURIComponent(query)}`,
       { next: { revalidate: 3600 } }
     );

@@ -1,4 +1,5 @@
 "use server";
+import { ipv4Fetch } from "./fetch";
 
 export interface MediaSearchResult {
   id: number;
@@ -31,7 +32,7 @@ export async function searchMedia(query: string): Promise<MediaSearchResult[]> {
 
   const url = `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${encodeURIComponent(query)}&include_adult=false`;
 
-  const res = await fetch(
+  const res = await ipv4Fetch(
     url,
     { next: { revalidate: 3600 } }
   );
@@ -77,7 +78,7 @@ export async function getMediaDetails(
     throw new Error("TMDB_API_KEY is not configured");
   }
 
-  const res = await fetch(
+  const res = await ipv4Fetch(
     `https://api.themoviedb.org/3/${type}/${id}?api_key=${apiKey}`,
     { next: { revalidate: 3600 } }
   );

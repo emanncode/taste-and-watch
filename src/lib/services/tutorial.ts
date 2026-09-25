@@ -1,4 +1,5 @@
 "use server";
+import { ipv4Fetch } from "./fetch";
 
 export interface TutorialResult {
   title: string;
@@ -31,7 +32,7 @@ export async function searchTutorial(query: string): Promise<TutorialResult> {
       query
     )}&type=video&maxResults=1&key=${apiKey}`;
 
-    const res = await fetch(url, { next: { revalidate: 3600 } });
+    const res = await ipv4Fetch(url, { next: { revalidate: 3600 } });
 
     if (!res.ok) {
       console.warn(`YouTube API returned ${res.status}. Falling back to search URL.`);
