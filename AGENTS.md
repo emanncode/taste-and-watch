@@ -1,30 +1,31 @@
-# Taste & Watch Project Context
+# Taste & Watch — Agent Entry Point
 
-You are an expert developer and designer working on **Taste & Watch**, a First Commit hackathon project. 
+Welcome to the **Taste & Watch** repository.
 
-## Context
-*   **Hackathon Details:** First Commit (Devpost). It is beginner-friendly and judged on learning/growth, understanding, creativity, execution, and presentation (not raw complexity).
-*   **Deadline:** Sept 30, 2026.
-*   **Workflow:**
-    *   Claude acts as the PM (writes design + build prompts).
-    *   You (Antigravity/"Agy") act as the executor (execute design first, then code).
-    *   Linear is the documentation of record.
-*   **Scope:** This is effectively a one-page app. The screen inventory consists of states of one page: empty/landing, loading, result (media + recipe), no-match/error.
+This project is a First Commit hackathon project.
 
-## Tech Stack
-*   Next.js (App Router)
-*   Tailwind CSS
-*   shadcn/ui
-*   TMDB or Jikan API (media)
-*   Spoonacular API (recipes)
+## Project Documentation & Authority
 
-## Project Overview
-Taste & Watch takes whatever media a user is watching and suggests a thematic recipe pairing, cross-referencing entertainment APIs with recipe APIs.
+To prevent conflicting historical instructions, follow this strict hierarchy of authority:
 
-## Outstanding Decisions
-*   **Visual Identity:** Palette, type, and layout metaphor are undecided. The previous HTML mockup was just a throwaway reference.
-*   **Component Inventory:** Expected components include a search input, media result block, recipe list/cards, skeleton loader, and error/empty state.
-*   **Keyword-Matcher Logic:** The logic mapping media genre/tags to recipe search terms still needs to be determined.
+1. **Linear Documentation:** Current product requirements and scope live in Linear.
+2. **`.agy/skills/taste-and-watch/SKILL.md`:** The authoritative AGY implementation instructions for this project. **Always refer to this file before making changes.**
+3. **`.agy/skills/taste-and-watch/decisions.md`:** The authoritative record for locked technical and product decisions.
+4. **`AGENTS.md` (this file):** Lightweight repository-level entry point.
+5. **`PROJECT_JOURNEY.md`:** A purely historical record of previous decisions. **Do not use this as an implementation authority.**
 
-Always keep this context in mind when writing code, making design decisions, and fulfilling requirements for the hackathon.
+## Repository Rules
 
+*   **Consult the `.agy` files first:** All detailed architectural guidelines, definitions of done, and UX principles are located in `.agy/skills/taste-and-watch/SKILL.md`.
+*   **Do not rely on stale specifications:** Earlier iterations of this project experimented with different APIs (e.g., Jikan, Spoonacular), client-side secrets, and varying visual directions. These are obsolete. Follow the locked architecture defined in the `.agy` decision and skill files.
+*   **Use the issue template:** When executing tasks, ensure the prompt aligns with the structure provided in `.agy/skills/taste-and-watch/issue-template.md`.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

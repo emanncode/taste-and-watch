@@ -1,3 +1,11 @@
+> **NOTICE: HISTORICAL DOCUMENT**
+>
+> * This is a historical document.
+> * Some technical/product decisions recorded here have since been superseded.
+> * It must NOT be treated as the current implementation specification.
+> * Current requirements and architecture are defined strictly by Linear and the `.agy` Taste & Watch skill/decision files.
+
+
 # Taste & Watch: The Journey So Far
 
 This document chronicles every decision, architecture shift, user addition, and UI/UX design choice made from the beginning of the "Taste & Watch" project up to its current state.
