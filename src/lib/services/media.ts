@@ -29,10 +29,10 @@ export async function searchMedia(query: string): Promise<MediaSearchResult[]> {
     return [];
   }
 
+  const url = `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${encodeURIComponent(query)}&include_adult=false`;
+
   const res = await fetch(
-    `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${encodeURIComponent(
-      query
-    )}&include_adult=false`,
+    url,
     { next: { revalidate: 3600 } }
   );
 

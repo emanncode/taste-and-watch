@@ -238,6 +238,10 @@ export default function TasteAndWatchApp() {
               <button onClick={() => setAppState("RECOMMENDATIONS_READY")} className="text-emerald-400 hover:underline">
                 Back to Recommendations
               </button>
+            ) : selectedMedia ? (
+              <button onClick={() => setAppState("MEDIA_SELECTED")} className="text-emerald-400 hover:underline">
+                Back to Movie (Retry)
+              </button>
             ) : (
               <button onClick={handleReset} className="text-emerald-400 hover:underline">
                 Back to Home

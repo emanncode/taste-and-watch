@@ -41,9 +41,28 @@ export async function generateRecommendations(
     throw new Error("AI Provider API key is not configured.");
   }
 
-  // Initialize the provider with the explicit key
-  const google = createGoogleGenerativeAI({ apiKey });
-  const aiModel = google("gemini-2.5-flash");
+  // WORKAROUND: Force IPv4 for the AI SDK to bypass the local IPv6 ETIMEDOUT bug
+  const { fetch: undiciFetch, Agent: UndiciAgent } = await import("undici");
+  const dns = await import("node:dns");
+  
+  const ipv4Agent = new UndiciAgent({
+    connect: {
+      lookup: (hostname, options, callback) => {
+        dns.lookup(hostname, { ...options, family: 4 }, callback);
+      }
+    }
+  });
+
+  const customFetch = (url: string, init?: RequestInit) => {
+    return undiciFetch(url, { ...init, dispatcher: ipv4Agent } as any) as unknown as Promise<Response>;
+  };
+
+  // Initialize the provider with the explicit key and our IPv4-enforced fetch
+  const google = createGoogleGenerativeAI({ 
+    apiKey,
+    fetch: customFetch
+  });
+  const aiModel = google("gemini-3.8-flash");
 
   const prompt = `
     You are a culinary recommendation engine. The user is watching the following ${media.mediaType}:
