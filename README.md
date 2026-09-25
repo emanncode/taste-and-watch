@@ -22,10 +22,40 @@ To finish by September 30, we are keeping the features highly focused:
 3. **Success State (The Reveal):** Left side renders media details. Right side renders a scrollable deck of recipe recommendations. Clicking a recipe takes them to full instructions.
 4. **Error / Empty State:** Friendly error messages for failed searches.
 
-## MVP Architecture Highlights
-* **Stack:** Next.js (App Router), TypeScript, Tailwind CSS, shadcn/ui.
-* **Providers:** TMDB (Media), TheMealDB (Recipes), Vercel AI SDK (Recommendations).
-* **Architecture:** Server-side API and provider access, organized by clear service boundaries (`MediaService`, `RecommendationService`, `RecipeService`, `TutorialService`).
+## MVP Architecture & Technical Decisions
+* **Stack:** Next.js (App Router), React, TypeScript, Tailwind CSS, shadcn/ui.
+* **Providers:** 
+  * **TMDB:** Powers the media search and details.
+  * **TheMealDB:** Fetches structured recipe data.
+  * **Vercel AI SDK (Gemini 3.8 Flash):** Orchestrates the recommendation engine using strictly typed JSON structured outputs (Zod). We enforce a robust schema containing connection type, reasoning, prep time, difficulty, and smart search queries.
+  * **YouTube Data API v3:** Provides the final "Tutorial Handoff" experience.
+* **Architecture:** 
+  * **Single-Page State Machine:** The entire experience is a fluid single-page application governed by an explicit state machine (`EMPTY` → `SEARCHING` → `MEDIA_SELECTED` → `RECOMMENDATIONS_READY` → `RECIPE_OPEN` → `TUTORIAL_HANDOFF`), eliminating jarring page loads.
+  * **Server-Side Actions:** All API keys and provider integrations remain strictly on the server (`src/lib/services/*`).
+  * **Graceful Fallbacks:** To ensure a bulletproof MVP, if the YouTube API quota is exceeded or the key is missing, the app seamlessly falls back to securely generating direct YouTube search URLs rather than breaking the movie-night flow.
+
+## Running Locally
+
+1. **Clone & Install**
+   ```bash
+   git clone https://github.com/emanncode/taste-and-watch.git
+   cd taste-and-watch
+   npm install
+   ```
+
+2. **Environment Variables**
+   Create a `.env.local` file in the root based on `.env.example`:
+   ```env
+   TMDB_ACCESS_TOKEN="your_tmdb_read_access_token_here"
+   GOOGLE_GENERATIVE_AI_API_KEY="your_gemini_api_key_here"
+   YOUTUBE_API_KEY="your_youtube_data_api_v3_key_here" # Optional: App will safely fallback to direct search URLs if missing
+   ```
+
+3. **Run Development Server**
+   ```bash
+   npm run dev
+   ```
+   Navigate to `http://localhost:3000` to start your movie night!
 
 ---
 

@@ -213,10 +213,11 @@ export default function TasteAndWatchApp() {
             <h3 className="text-2xl font-bold mb-6 text-zinc-100">Results for &quot;{query}&quot;</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
               {mediaResults.map((media) => (
-                <div 
+                <button 
                   key={media.id} 
+                  type="button"
                   onClick={() => selectMedia(media)}
-                  className="group cursor-pointer bg-zinc-900/50 rounded-xl overflow-hidden border border-zinc-800 hover:border-emerald-500/50 transition-all hover:scale-105"
+                  className="group cursor-pointer bg-zinc-900/50 rounded-xl overflow-hidden border border-zinc-800 hover:border-emerald-500/50 transition-all hover:scale-105 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
                 >
                   <div className="aspect-[2/3] bg-zinc-900 relative">
                     {media.posterUrl ? (
@@ -238,7 +239,7 @@ export default function TasteAndWatchApp() {
                     </h4>
                     <p className="text-sm text-zinc-500 mt-1">{media.releaseYear || "Unknown Year"}</p>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -256,15 +257,15 @@ export default function TasteAndWatchApp() {
           <div className="w-full text-center py-20 mt-20">
             <p className="text-red-400 text-lg mb-4">{error}</p>
             {selectedMedia && recommendations.length > 0 ? (
-              <button onClick={() => setAppState("RECOMMENDATIONS_READY")} className="text-emerald-400 hover:underline">
+              <button onClick={() => setAppState("RECOMMENDATIONS_READY")} className="text-emerald-400 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-sm px-2 py-1">
                 Back to Recommendations
               </button>
             ) : selectedMedia ? (
-              <button onClick={() => setAppState("MEDIA_SELECTED")} className="text-emerald-400 hover:underline">
+              <button onClick={() => setAppState("MEDIA_SELECTED")} className="text-emerald-400 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-sm px-2 py-1">
                 Back to Movie (Retry)
               </button>
             ) : (
-              <button onClick={handleReset} className="text-emerald-400 hover:underline">
+              <button onClick={handleReset} className="text-emerald-400 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-sm px-2 py-1">
                 Back to Home
               </button>
             )}
@@ -277,7 +278,7 @@ export default function TasteAndWatchApp() {
             {appState === "MEDIA_SELECTED" && (
               <button 
                 onClick={() => setAppState("SEARCH_RESULTS")} 
-                className="text-emerald-400 hover:underline mb-6 block text-sm"
+                className="text-emerald-400 hover:underline mb-6 block text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-sm px-2 py-1 -ml-2"
               >
                 &larr; Back to results
               </button>
@@ -331,7 +332,7 @@ export default function TasteAndWatchApp() {
                 {appState === "MEDIA_SELECTED" && (
                   <div className="pt-8 border-t border-zinc-800/50">
                     <button 
-                      className="bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold px-6 py-3 rounded-full transition-colors shadow-lg shadow-emerald-500/20"
+                      className="bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold px-6 py-3 rounded-full transition-colors shadow-lg shadow-emerald-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
                       onClick={handleFindPairings}
                     >
                       Find Recipe Pairings
@@ -404,7 +405,7 @@ export default function TasteAndWatchApp() {
                       {appState === "RECOMMENDATIONS_READY" && (
                         <button 
                           onClick={() => handleFetchRecipe(rec)}
-                          className="w-full bg-zinc-100 hover:bg-white text-zinc-900 font-semibold py-2.5 rounded-lg transition-colors text-sm"
+                          className="w-full bg-zinc-100 hover:bg-white text-zinc-900 font-semibold py-2.5 rounded-lg transition-colors text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
                         >
                           Find Recipe
                         </button>
@@ -420,12 +421,17 @@ export default function TasteAndWatchApp() {
         {/* RECIPE OVERLAY/MODAL */}
         {appState === "RECIPE_OPEN" && selectedRecipe && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-sm overflow-y-auto">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto flex flex-col mt-10 mb-10">
+            <div 
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="recipe-modal-title"
+              className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto flex flex-col mt-10 mb-10"
+            >
               
               {/* Modal Header */}
               <div className="sticky top-0 bg-zinc-900/95 backdrop-blur z-10 border-b border-zinc-800 p-6 flex items-center justify-between">
                 <div>
-                  <h3 className="text-2xl font-bold text-zinc-50">{selectedRecipe.name}</h3>
+                  <h3 id="recipe-modal-title" className="text-2xl font-bold text-zinc-50">{selectedRecipe.name}</h3>
                   <div className="flex items-center gap-3 mt-2 text-sm text-zinc-400">
                     {selectedRecipe.category && <span>{selectedRecipe.category}</span>}
                     {selectedRecipe.area && (
@@ -438,7 +444,8 @@ export default function TasteAndWatchApp() {
                 </div>
                 <button 
                   onClick={closeRecipe}
-                  className="p-2 bg-zinc-800/50 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-zinc-100 transition-colors"
+                  aria-label="Close Recipe"
+                  className="p-2 bg-zinc-800/50 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-zinc-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -494,14 +501,14 @@ export default function TasteAndWatchApp() {
                         href={selectedRecipe.sourceUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-2 text-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-4 py-2 rounded-lg transition-colors"
+                        className="flex items-center gap-2 text-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-4 py-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
                       >
                         <ExternalLink className="w-4 h-4" /> Original Recipe Source
                       </a>
                     )}
                     <button 
                       onClick={handleFindTutorial}
-                      className="flex items-center gap-2 text-sm bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg transition-colors"
+                      className="flex items-center gap-2 text-sm bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
                     >
                       Find Video Tutorial
                     </button>
@@ -516,19 +523,25 @@ export default function TasteAndWatchApp() {
         {/* TUTORIAL HANDOFF OVERLAY/MODAL */}
         {appState === "TUTORIAL_HANDOFF" && tutorialResult && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-sm overflow-y-auto">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-y-auto flex flex-col mt-10 mb-10 text-center p-8 relative">
+            <div 
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="tutorial-modal-title"
+              className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-y-auto flex flex-col mt-10 mb-10 text-center p-8 relative"
+            >
               <button 
                 onClick={() => setAppState("RECIPE_OPEN")}
-                className="absolute top-6 right-6 p-2 bg-zinc-800/50 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-zinc-100 transition-colors"
+                className="absolute top-6 right-6 p-2 bg-zinc-800/50 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-zinc-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
+                aria-label="Close"
               >
                 <X className="w-5 h-5" />
               </button>
               
               <div className="w-16 h-16 mx-auto mb-6 text-red-500 bg-red-500/10 rounded-full flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
               </div>
 
-              <h3 className="text-2xl font-bold text-zinc-50 mb-4">
+              <h3 id="tutorial-modal-title" className="text-2xl font-bold text-zinc-50 mb-4">
                 {tutorialResult.provider === "youtube_search" ? "Search YouTube for Tutorial" : "Tutorial Found!"}
               </h3>
               
@@ -551,7 +564,7 @@ export default function TasteAndWatchApp() {
                 href={tutorialResult.url}
                 target="_blank"
                 rel="noreferrer"
-                className="w-full max-w-sm mx-auto flex items-center justify-center gap-2 text-lg bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-4 rounded-xl transition-colors mb-4"
+                className="w-full max-w-sm mx-auto flex items-center justify-center gap-2 text-lg bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-4 rounded-xl transition-colors mb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
               >
                 Watch on YouTube <ExternalLink className="w-5 h-5" />
               </a>
@@ -561,7 +574,7 @@ export default function TasteAndWatchApp() {
                   href={`https://www.youtube.com/results?search_query=${encodeURIComponent(selectedRecommendation.youtubeQuery)}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="w-full max-w-sm mx-auto flex items-center justify-center gap-2 text-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium px-6 py-3 rounded-xl transition-colors mb-6"
+                  className="w-full max-w-sm mx-auto flex items-center justify-center gap-2 text-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium px-6 py-3 rounded-xl transition-colors mb-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
                 >
                   More tutorials on YouTube <ExternalLink className="w-4 h-4" />
                 </a>
@@ -569,7 +582,7 @@ export default function TasteAndWatchApp() {
               
               <button 
                 onClick={() => setAppState("RECIPE_OPEN")}
-                className="text-zinc-400 hover:text-zinc-200 transition-colors text-sm"
+                className="text-zinc-400 hover:text-zinc-200 transition-colors text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 rounded-sm px-2 py-1"
               >
                 Back to Recipe
               </button>
