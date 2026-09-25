@@ -5,6 +5,8 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { z } from "zod";
 import { MediaDetails } from "./media";
 
+import { createOpenAI } from "@ai-sdk/openai";
+
 export interface Recommendation {
   name: string;
   connectionType: "screen_associated" | "thematic" | "vibe";
@@ -36,9 +38,12 @@ const recommendationSchema = z.object({
 export async function generateRecommendations(
   media: MediaDetails
 ): Promise<RecommendationResponse> {
-  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.AI_PROVIDER_API_KEY;
-  if (!apiKey) {
-    throw new Error("AI Provider API key is not configured.");
+  const geminiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.AI_PROVIDER_API_KEY;
+  const groqKey = process.env.GROQ_API_KEY;
+  const nvidiaKey = process.env.NVIDIA_API_KEY;
+
+  if (!geminiKey && !groqKey && !nvidiaKey) {
+    throw new Error("No AI Provider API key configured. Set GROQ_API_KEY, NVIDIA_API_KEY, or GOOGLE_GENERATIVE_AI_API_KEY.");
   }
 
   // WORKAROUND: Force IPv4 for the AI SDK to bypass the local IPv6 ETIMEDOUT bug
@@ -58,12 +63,33 @@ export async function generateRecommendations(
     return undiciFetch(url as any, { ...init, dispatcher: ipv4Agent } as any) as unknown as Promise<Response>;
   };
 
-  // Initialize the provider with the explicit key and our IPv4-enforced fetch
-  const google = createGoogleGenerativeAI({ 
-    apiKey,
-    fetch: customFetch
-  });
-  const aiModel = google("gemini-3.8-flash");
+  // Dynamically select the provider based on available keys
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let aiModel: any;
+  
+  if (groqKey) {
+    const groq = createOpenAI({
+      baseURL: "https://api.groq.com/openai/v1",
+      apiKey: groqKey,
+      fetch: customFetch
+    });
+    // Groq's Llama 3.1 70B is incredibly fast and great at JSON
+    aiModel = groq("llama-3.1-70b-versatile");
+  } else if (nvidiaKey) {
+    const nvidia = createOpenAI({
+      baseURL: "https://integrate.api.nvidia.com/v1",
+      apiKey: nvidiaKey,
+      fetch: customFetch
+    });
+    // NVIDIA NIM Llama 3.1 70B
+    aiModel = nvidia("meta/llama-3.1-70b-instruct");
+  } else {
+    const google = createGoogleGenerativeAI({ 
+      apiKey: geminiKey,
+      fetch: customFetch
+    });
+    aiModel = google("gemini-3.8-flash");
+  }
 
   const prompt = `
     You are a culinary recommendation engine. The user is watching the following ${media.mediaType}:
