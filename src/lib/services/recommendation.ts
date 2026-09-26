@@ -73,8 +73,8 @@ export async function generateRecommendations(
       apiKey: groqKey,
       fetch: customFetch
     });
-    // Groq's Llama 3.1 70B is incredibly fast and great at JSON
-    aiModel = groq("llama-3.1-70b-versatile");
+    // Groq's GPT OSS 120B is incredibly fast and great at JSON
+    aiModel = groq("openai/gpt-oss-120b");
   } else if (nvidiaKey) {
     const nvidia = createOpenAI({
       baseURL: "https://integrate.api.nvidia.com/v1",
