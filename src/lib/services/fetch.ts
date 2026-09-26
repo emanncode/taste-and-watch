@@ -1,4 +1,4 @@
-import { fetch as undiciFetch, Agent as UndiciAgent } from "undici";
+import { Agent as UndiciAgent } from "undici";
 import * as dns from "node:dns";
 
 const ipv4Agent = new UndiciAgent({
