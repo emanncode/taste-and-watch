@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { Search, Film, Tv, ChefHat, Clock, UtensilsCrossed, X, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { fuzzySearchMedia, searchMedia, getMediaDetails, MediaSearchResult, MediaDetails } from "@/lib/services/media";
+import { fuzzySearchMedia, getMediaDetails, MediaSearchResult, MediaDetails } from "@/lib/services/media";
 import { generateRecommendations, Recommendation } from "@/lib/services/recommendation";
 import { searchRecipe, RecipeDetails } from "@/lib/services/recipe";
 import { searchTutorial, TutorialResult } from "@/lib/services/tutorial";
@@ -41,10 +41,10 @@ export default function TasteAndWatchApp() {
     try {
       setAppState("SEARCHING");
       setError(null);
-      
+
       const results = await fuzzySearchMedia(query);
       setMediaResults(results);
-      
+
       if (results.length > 0) {
         setAppState("SEARCH_RESULTS");
       } else {
@@ -94,7 +94,7 @@ export default function TasteAndWatchApp() {
       setAppState("RECIPE_LOADING");
       setError(null);
       const recipe = await searchRecipe(rec.recipeQuery);
-      
+
       if (!recipe) {
         // Fallback or explicit no-match state. We'll set an error, but let user go back.
         setError(`We scoured our cookbooks, but we couldn't find a perfect recipe for "${rec.name}" right now.`);
@@ -113,7 +113,7 @@ export default function TasteAndWatchApp() {
 
   const handleFindTutorial = async () => {
     if (!selectedRecommendation) return;
-    
+
     try {
       setAppState("TUTORIAL_LOADING");
       setError(null);
@@ -154,7 +154,7 @@ export default function TasteAndWatchApp() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 flex flex-col font-sans">
       <main className="flex-grow flex flex-col items-center justify-center p-6 relative z-10 w-full max-w-7xl mx-auto">
-        
+
         {/* TOP SEARCH BAR */}
         {appState !== "EMPTY" && (
           <div className="absolute top-6 left-6 right-6 md:left-12 md:right-12 z-20 flex items-center justify-between">
@@ -213,8 +213,8 @@ export default function TasteAndWatchApp() {
             <h3 className="text-2xl font-bold mb-6 text-zinc-100">Results for &quot;{query}&quot;</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
               {mediaResults.map((media) => (
-                <button 
-                  key={media.id} 
+                <button
+                  key={media.id}
                   type="button"
                   onClick={() => selectMedia(media)}
                   className="group cursor-pointer bg-zinc-900/50 rounded-xl overflow-hidden border border-zinc-800 hover:border-emerald-500/50 transition-all hover:scale-105 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
@@ -276,14 +276,14 @@ export default function TasteAndWatchApp() {
         {(appState === "MEDIA_SELECTED" || appState === "RECOMMENDATIONS_LOADING" || appState === "RECOMMENDATIONS_READY" || appState === "RECIPE_LOADING" || appState === "RECIPE_OPEN" || appState === "TUTORIAL_LOADING" || appState === "TUTORIAL_HANDOFF") && selectedMedia && (
           <div className="w-full mt-24 md:mt-20">
             {appState === "MEDIA_SELECTED" && (
-              <button 
-                onClick={() => setAppState("SEARCH_RESULTS")} 
+              <button
+                onClick={() => setAppState("SEARCH_RESULTS")}
                 className="text-emerald-400 hover:underline mb-6 block text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-sm px-2 py-1 -ml-2"
               >
                 &larr; Back to results
               </button>
             )}
-            
+
             <div className="flex flex-col md:flex-row gap-8 items-start mb-12">
               {/* Media Poster */}
               <div className="w-full md:w-1/3 max-w-sm mx-auto md:mx-0 flex-shrink-0">
@@ -328,10 +328,10 @@ export default function TasteAndWatchApp() {
                     {selectedMedia.overview || "No overview available."}
                   </p>
                 </div>
-                
+
                 {appState === "MEDIA_SELECTED" && (
                   <div className="pt-8 border-t border-zinc-800/50">
-                    <button 
+                    <button
                       className="bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold px-6 py-3 rounded-full transition-colors shadow-lg shadow-emerald-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
                       onClick={handleFindPairings}
                     >
@@ -362,7 +362,7 @@ export default function TasteAndWatchApp() {
             {appState === "TUTORIAL_LOADING" && (
               <div className="w-full text-center py-20 text-zinc-400 border-t border-zinc-800/50">
                 <div className="w-12 h-12 mx-auto mb-4 animate-bounce text-red-500 flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" className="w-full h-full"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" className="w-full h-full"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" /></svg>
                 </div>
                 <p className="animate-pulse text-lg">Finding the best video tutorial...</p>
               </div>
@@ -374,7 +374,7 @@ export default function TasteAndWatchApp() {
                   <UtensilsCrossed className="text-emerald-400" />
                   Recommended Pairings
                 </h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {recommendations.map((rec, i) => (
                     <div key={i} className="bg-zinc-900/50 rounded-2xl border border-zinc-800 p-6 flex flex-col h-full hover:border-emerald-500/50 transition-colors">
@@ -386,11 +386,11 @@ export default function TasteAndWatchApp() {
                           {formatConnectionType(rec.connectionType)}
                         </span>
                       </div>
-                      
+
                       <p className="text-zinc-400 text-sm mb-6 flex-grow">
                         {rec.reason}
                       </p>
-                      
+
                       <div className="flex items-center gap-4 text-xs text-zinc-500 font-medium mb-6 pt-4 border-t border-zinc-800/50">
                         <span className="flex items-center gap-1.5 bg-zinc-950 px-2 py-1 rounded">
                           <Clock className="w-3.5 h-3.5" />
@@ -401,9 +401,9 @@ export default function TasteAndWatchApp() {
                           {rec.difficulty}
                         </span>
                       </div>
-                      
+
                       {appState === "RECOMMENDATIONS_READY" && (
-                        <button 
+                        <button
                           onClick={() => handleFetchRecipe(rec)}
                           className="w-full bg-zinc-100 hover:bg-white text-zinc-900 font-semibold py-2.5 rounded-lg transition-colors text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
                         >
@@ -421,13 +421,13 @@ export default function TasteAndWatchApp() {
         {/* RECIPE OVERLAY/MODAL */}
         {appState === "RECIPE_OPEN" && selectedRecipe && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-sm overflow-y-auto">
-            <div 
+            <div
               role="dialog"
               aria-modal="true"
               aria-labelledby="recipe-modal-title"
               className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto flex flex-col mt-10 mb-10"
             >
-              
+
               {/* Modal Header */}
               <div className="sticky top-0 bg-zinc-900/95 backdrop-blur z-10 border-b border-zinc-800 p-6 flex items-center justify-between">
                 <div>
@@ -442,7 +442,7 @@ export default function TasteAndWatchApp() {
                     )}
                   </div>
                 </div>
-                <button 
+                <button
                   onClick={closeRecipe}
                   aria-label="Close Recipe"
                   className="p-2 bg-zinc-800/50 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-zinc-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
@@ -453,15 +453,15 @@ export default function TasteAndWatchApp() {
 
               {/* Modal Body */}
               <div className="p-6 md:p-8 flex flex-col lg:flex-row gap-10">
-                
+
                 {/* Left Col: Image & Ingredients */}
                 <div className="w-full lg:w-1/3 space-y-8">
                   {selectedRecipe.imageUrl && (
                     <div className="aspect-square rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950">
-                      <img 
-                        src={selectedRecipe.imageUrl} 
+                      <img
+                        src={selectedRecipe.imageUrl}
                         alt={selectedRecipe.name}
-                        className="w-full h-full object-cover" 
+                        className="w-full h-full object-cover"
                       />
                     </div>
                   )}
@@ -497,7 +497,7 @@ export default function TasteAndWatchApp() {
                   {/* External Links */}
                   <div className="pt-6 border-t border-zinc-800 flex flex-wrap gap-4">
                     {selectedRecipe.sourceUrl && (
-                      <a 
+                      <a
                         href={selectedRecipe.sourceUrl}
                         target="_blank"
                         rel="noreferrer"
@@ -506,7 +506,7 @@ export default function TasteAndWatchApp() {
                         <ExternalLink className="w-4 h-4" /> Original Recipe Source
                       </a>
                     )}
-                    <button 
+                    <button
                       onClick={handleFindTutorial}
                       className="flex items-center gap-2 text-sm bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
                     >
@@ -523,34 +523,34 @@ export default function TasteAndWatchApp() {
         {/* TUTORIAL HANDOFF OVERLAY/MODAL */}
         {appState === "TUTORIAL_HANDOFF" && tutorialResult && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-sm overflow-y-auto">
-            <div 
+            <div
               role="dialog"
               aria-modal="true"
               aria-labelledby="tutorial-modal-title"
               className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-y-auto flex flex-col mt-10 mb-10 text-center p-8 relative"
             >
-              <button 
+              <button
                 onClick={() => setAppState("RECIPE_OPEN")}
                 className="absolute top-6 right-6 p-2 bg-zinc-800/50 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-zinc-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
                 aria-label="Close"
               >
                 <X className="w-5 h-5" />
               </button>
-              
+
               <div className="w-16 h-16 mx-auto mb-6 text-red-500 bg-red-500/10 rounded-full flex items-center justify-center">
-                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" /></svg>
               </div>
 
               <h3 id="tutorial-modal-title" className="text-2xl font-bold text-zinc-50 mb-4">
                 {tutorialResult.provider === "youtube_search" ? "Search YouTube for Tutorial" : "Tutorial Found!"}
               </h3>
-              
+
               {tutorialResult.thumbnail && (
                 <div className="w-full max-w-sm mx-auto aspect-video rounded-xl overflow-hidden border border-zinc-800 mb-6 bg-zinc-950">
-                  <img 
-                    src={tutorialResult.thumbnail} 
+                  <img
+                    src={tutorialResult.thumbnail}
                     alt={tutorialResult.title}
-                    className="w-full h-full object-cover" 
+                    className="w-full h-full object-cover"
                   />
                 </div>
               )}
@@ -560,7 +560,7 @@ export default function TasteAndWatchApp() {
                 <p className="text-zinc-500 text-sm mb-8">by {tutorialResult.channelTitle}</p>
               )}
 
-              <a 
+              <a
                 href={tutorialResult.url}
                 target="_blank"
                 rel="noreferrer"
@@ -570,7 +570,7 @@ export default function TasteAndWatchApp() {
               </a>
 
               {tutorialResult.provider === "youtube_api" && selectedRecommendation && (
-                <a 
+                <a
                   href={`https://www.youtube.com/results?search_query=${encodeURIComponent(selectedRecommendation.youtubeQuery)}`}
                   target="_blank"
                   rel="noreferrer"
@@ -579,8 +579,8 @@ export default function TasteAndWatchApp() {
                   More tutorials on YouTube <ExternalLink className="w-4 h-4" />
                 </a>
               )}
-              
-              <button 
+
+              <button
                 onClick={() => setAppState("RECIPE_OPEN")}
                 className="text-zinc-400 hover:text-zinc-200 transition-colors text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 rounded-sm px-2 py-1"
               >
