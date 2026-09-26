@@ -48,12 +48,12 @@ export default function TasteAndWatchApp() {
       if (results.length > 0) {
         setAppState("SEARCH_RESULTS");
       } else {
-        setError("No media found for that search. Try another movie or show.");
+        setError("We couldn't quite find that one in our cinematic archives. Could you try another title?");
         setAppState("ERROR");
       }
     } catch (err) {
       console.error(err);
-      setError("An error occurred while searching. Ensure API keys are configured and try again.");
+      setError("Our search system had a little hiccup. Please try your search again in a moment.");
       setAppState("ERROR");
     }
   };
@@ -67,7 +67,7 @@ export default function TasteAndWatchApp() {
       setAppState("MEDIA_SELECTED");
     } catch (err) {
       console.error(err);
-      setError("An error occurred while fetching media details.");
+      setError("We're having trouble retrieving the details for that title right now. Let's try another one.");
       setAppState("ERROR");
     }
   };
@@ -83,7 +83,7 @@ export default function TasteAndWatchApp() {
       setAppState("RECOMMENDATIONS_READY");
     } catch (err) {
       console.error(err);
-      setError("Failed to generate AI recommendations. Ensure API keys are configured.");
+      setError("Our virtual chefs are completely overwhelmed in the kitchen right now! Please try generating pairings again in a moment.");
       setAppState("ERROR");
     }
   };
@@ -97,7 +97,7 @@ export default function TasteAndWatchApp() {
       
       if (!recipe) {
         // Fallback or explicit no-match state. We'll set an error, but let user go back.
-        setError(`No exact recipe found in TheMealDB for "${rec.recipeQuery}".`);
+        setError(`We scoured our cookbooks, but we couldn't find a perfect recipe for "${rec.name}" right now.`);
         setAppState("ERROR");
         return;
       }
@@ -106,7 +106,7 @@ export default function TasteAndWatchApp() {
       setAppState("RECIPE_OPEN");
     } catch (err) {
       console.error(err);
-      setError("An error occurred while fetching the recipe.");
+      setError("We dropped the recipe card! Please try opening it again.");
       setAppState("ERROR");
     }
   };
@@ -122,7 +122,7 @@ export default function TasteAndWatchApp() {
       setAppState("TUTORIAL_HANDOFF");
     } catch (err) {
       console.error(err);
-      setError("An error occurred while finding a tutorial.");
+      setError("We couldn't connect to the tutorial kitchen right now. Please try again in a bit.");
       setAppState("ERROR");
     }
   };
