@@ -203,7 +203,7 @@ export default function TasteAndWatchApp() {
         {/* SEARCHING STATE */}
         {appState === "SEARCHING" && (
           <div className="w-full text-center py-20 text-zinc-400 mt-20">
-            <p className="animate-pulse text-lg">Searching TMDB for &quot;{query}&quot;...</p>
+            <p className="animate-pulse text-lg">Searching our cinematic archives for &quot;{query}&quot;...</p>
           </div>
         )}
 
@@ -346,7 +346,7 @@ export default function TasteAndWatchApp() {
             {appState === "RECOMMENDATIONS_LOADING" && (
               <div className="w-full text-center py-20 text-zinc-400 border-t border-zinc-800/50">
                 <ChefHat className="w-12 h-12 mx-auto mb-4 animate-bounce text-emerald-500" />
-                <p className="animate-pulse text-lg">Our AI chef is brainstorming recipes for &quot;{selectedMedia.title}&quot;...</p>
+                <p className="animate-pulse text-lg">Our virtual chefs are brainstorming recipes for &quot;{selectedMedia.title}&quot;...</p>
               </div>
             )}
 
@@ -354,7 +354,7 @@ export default function TasteAndWatchApp() {
             {appState === "RECIPE_LOADING" && (
               <div className="w-full text-center py-20 text-zinc-400 border-t border-zinc-800/50">
                 <UtensilsCrossed className="w-12 h-12 mx-auto mb-4 animate-bounce text-emerald-500" />
-                <p className="animate-pulse text-lg">Searching TheMealDB for the perfect recipe...</p>
+                <p className="animate-pulse text-lg">Consulting our cookbooks for the perfect recipe...</p>
               </div>
             )}
 
