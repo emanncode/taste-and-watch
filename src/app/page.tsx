@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { Search, Film, Tv, ChefHat, Clock, UtensilsCrossed, X, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { searchMedia, getMediaDetails, MediaSearchResult, MediaDetails } from "@/lib/services/media";
+import { fuzzySearchMedia, searchMedia, getMediaDetails, MediaSearchResult, MediaDetails } from "@/lib/services/media";
 import { generateRecommendations, Recommendation } from "@/lib/services/recommendation";
 import { searchRecipe, RecipeDetails } from "@/lib/services/recipe";
 import { searchTutorial, TutorialResult } from "@/lib/services/tutorial";
@@ -42,7 +42,7 @@ export default function TasteAndWatchApp() {
       setAppState("SEARCHING");
       setError(null);
       
-      const results = await searchMedia(query);
+      const results = await fuzzySearchMedia(query);
       setMediaResults(results);
       
       if (results.length > 0) {

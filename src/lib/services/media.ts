@@ -109,3 +109,40 @@ export async function getMediaDetails(
     genres,
   };
 }
+
+import { generateObject } from "ai";
+import { z } from "zod";
+import { getAIModel } from "./ai";
+
+export async function fuzzySearchMedia(query: string): Promise<MediaSearchResult[]> {
+  // First, do a standard search
+  const directResults = await searchMedia(query);
+  if (directResults.length > 0) {
+    return directResults;
+  }
+
+  // If no results, try to guess the intended movie/show title using AI
+  try {
+    const aiModel = await getAIModel();
+    const { object } = await generateObject({
+      model: aiModel,
+      schema: z.object({
+        titles: z.array(z.string()).min(1).max(3),
+      }),
+      prompt: `The user searched for a movie or TV show using the query: "${query}". 
+      No exact matches were found. Please generate 1 to 3 real movie or TV show titles that they likely meant (correcting typos, alternative names, or closely related media).
+      Return just the titles as strings.`,
+      temperature: 0.5,
+    });
+
+    // Take the best guess and search again
+    if (object.titles && object.titles.length > 0) {
+      const bestGuess = object.titles[0];
+      return await searchMedia(bestGuess);
+    }
+  } catch (error) {
+    console.error("Fuzzy AI search failed:", error);
+  }
+
+  return [];
+}
