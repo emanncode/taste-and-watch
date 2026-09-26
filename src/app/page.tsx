@@ -192,7 +192,7 @@ export default function TasteAndWatchApp() {
               <Input
                 type="text"
                 placeholder="What are you watching tonight?"
-                className="w-full bg-zinc-900/50 border-zinc-800 text-zinc-100 placeholder:text-zinc-500 pl-12 h-14 rounded-full text-lg focus-visible:ring-emerald-500/50 transition-all shadow-xl"
+                className="w-full bg-zinc-900/50 border-zinc-800 text-zinc-100 placeholder:text-zinc-500 pl-12 h-14 rounded-full text-lg focus-visible:ring-emerald-500/50 transition-all shadow-xl border-none"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
