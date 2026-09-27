@@ -73,7 +73,7 @@ export async function searchRecipe(query: string): Promise<RecipeDetails | null>
         })).min(3).max(20)
       }),
       prompt: `The user requested a recipe for "${query}". The recipe database failed to find it. 
-      Please act as a master chef and provide a complete, authentic, and structured recipe for this dish.
+      Please act as a master chef and provide a complete and structured recipe for this dish.
       The instructions must be a single, detailed string (you can use paragraphs or numbered steps).`,
       temperature: 0.5,
     });
