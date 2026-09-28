@@ -20,17 +20,17 @@ export interface MediaDetails {
   genres: string[];
 }
 
-export async function searchMedia(query: string): Promise<MediaSearchResult[]> {
+export async function searchMedia(query: string, page: number = 1): Promise<{ results: MediaSearchResult[], totalPages: number }> {
   const apiKey = process.env.TMDB_API_KEY;
   if (!apiKey) {
     throw new Error("TMDB_API_KEY is not configured");
   }
 
   if (!query.trim()) {
-    return [];
+    return { results: [], totalPages: 0 };
   }
 
-  const url = `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${encodeURIComponent(query)}&include_adult=false`;
+  const url = `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${encodeURIComponent(query)}&include_adult=false&page=${page}`;
 
   const res = await ipv4Fetch(
     url,
@@ -43,8 +43,9 @@ export async function searchMedia(query: string): Promise<MediaSearchResult[]> {
 
   const data = await res.json();
   const results = data.results || [];
+  const totalPages = data.total_pages || 1;
 
-  return results
+  const mappedResults = results
     .filter(
       (item: Record<string, unknown>) =>
         item.media_type === "movie" || item.media_type === "tv"
@@ -67,6 +68,7 @@ export async function searchMedia(query: string): Promise<MediaSearchResult[]> {
           : null,
       };
     });
+  return { results: mappedResults, totalPages };
 }
 
 export async function getMediaDetails(
@@ -114,11 +116,11 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { getAIModel } from "./ai";
 
-export async function fuzzySearchMedia(query: string): Promise<MediaSearchResult[]> {
+export async function fuzzySearchMedia(query: string, page: number = 1): Promise<{ results: MediaSearchResult[], totalPages: number, page: number }> {
   // First, do a standard search
-  const directResults = await searchMedia(query);
-  if (directResults.length > 0) {
-    return directResults;
+  const directResults = await searchMedia(query, page);
+  if (directResults.results.length > 0) {
+    return { ...directResults, page };
   }
 
   // If no results, try to guess the intended movie/show title using AI
@@ -138,11 +140,12 @@ export async function fuzzySearchMedia(query: string): Promise<MediaSearchResult
     // Take the best guess and search again
     if (object.titles && object.titles.length > 0) {
       const bestGuess = object.titles[0];
-      return await searchMedia(bestGuess);
+      const guessResults = await searchMedia(bestGuess, page);
+      return { ...guessResults, page };
     }
   } catch (error) {
     console.error("Fuzzy AI search failed:", error);
   }
 
-  return [];
+  return { results: [], totalPages: 0, page: 1 };
 }

@@ -2,8 +2,8 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Film, Tv, ChefHat, Clock, UtensilsCrossed, X, ExternalLink } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Search, Film, Tv, ChefHat, Clock, UtensilsCrossed, X, ExternalLink, ArrowRight, PlayCircle, Info } from "lucide-react";
+// import { Input } from "@/components/ui/input";
 import { fuzzySearchMedia, getMediaDetails, MediaSearchResult, MediaDetails } from "@/lib/services/media";
 import { generateRecommendations, Recommendation } from "@/lib/services/recommendation";
 import { searchRecipe, RecipeDetails } from "@/lib/services/recipe";
@@ -27,6 +27,8 @@ export default function TasteAndWatchApp() {
   const [appState, setAppState] = useState<AppState>("EMPTY");
   const [query, setQuery] = useState("");
   const [mediaResults, setMediaResults] = useState<MediaSearchResult[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [selectedMedia, setSelectedMedia] = useState<MediaDetails | null>(null);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [selectedRecommendation, setSelectedRecommendation] = useState<Recommendation | null>(null);
@@ -41,19 +43,19 @@ export default function TasteAndWatchApp() {
     try {
       setAppState("SEARCHING");
       setError(null);
-
-      const results = await fuzzySearchMedia(query);
-      setMediaResults(results);
-
-      if (results.length > 0) {
+      const res = await fuzzySearchMedia(query, 1);
+      setMediaResults(res.results);
+      setCurrentPage(res.page || 1);
+      setTotalPages(res.totalPages || 1);
+      if (res.results.length > 0) {
         setAppState("SEARCH_RESULTS");
       } else {
-        setError("We couldn't quite find that one in our cinematic archives. Could you try another title?");
+        setError("We couldn't find anything matching that title. Please try another search.");
         setAppState("ERROR");
       }
     } catch (err) {
       console.error(err);
-      setError("Our search system had a little hiccup. Please try your search again in a moment.");
+      setError("Our search system encountered an issue. Please try again.");
       setAppState("ERROR");
     }
   };
@@ -67,14 +69,13 @@ export default function TasteAndWatchApp() {
       setAppState("MEDIA_SELECTED");
     } catch (err) {
       console.error(err);
-      setError("We're having trouble retrieving the details for that title right now. Let's try another one.");
+      setError("Unable to retrieve details for this title right now.");
       setAppState("ERROR");
     }
   };
 
   const handleFindPairings = async () => {
     if (!selectedMedia) return;
-
     try {
       setAppState("RECOMMENDATIONS_LOADING");
       setError(null);
@@ -83,7 +84,7 @@ export default function TasteAndWatchApp() {
       setAppState("RECOMMENDATIONS_READY");
     } catch (err) {
       console.error(err);
-      setError("Our virtual chefs are completely overwhelmed in the kitchen right now! Please try generating pairings again in a moment.");
+      setError("Our chefs couldn't generate pairings at this moment. Please try again.");
       setAppState("ERROR");
     }
   };
@@ -94,26 +95,22 @@ export default function TasteAndWatchApp() {
       setAppState("RECIPE_LOADING");
       setError(null);
       const recipe = await searchRecipe(rec.recipeQuery);
-
       if (!recipe) {
-        // Fallback or explicit no-match state. We'll set an error, but let user go back.
-        setError(`We scoured our cookbooks, but we couldn't find a perfect recipe for "${rec.name}" right now.`);
+        setError(`We couldn't find a detailed recipe for "${rec.name}".`);
         setAppState("ERROR");
         return;
       }
-
       setSelectedRecipe(recipe);
       setAppState("RECIPE_OPEN");
     } catch (err) {
       console.error(err);
-      setError("We dropped the recipe card! Please try opening it again.");
+      setError("There was a problem opening this recipe. Please try again.");
       setAppState("ERROR");
     }
   };
 
   const handleFindTutorial = async () => {
     if (!selectedRecommendation) return;
-
     try {
       setAppState("TUTORIAL_LOADING");
       setError(null);
@@ -122,7 +119,7 @@ export default function TasteAndWatchApp() {
       setAppState("TUTORIAL_HANDOFF");
     } catch (err) {
       console.error(err);
-      setError("We couldn't connect to the tutorial kitchen right now. Please try again in a bit.");
+      setError("Could not find a video tutorial right now. Please try again.");
       setAppState("ERROR");
     }
   };
@@ -135,6 +132,8 @@ export default function TasteAndWatchApp() {
   const handleReset = () => {
     setQuery("");
     setMediaResults([]);
+    setCurrentPage(1);
+    setTotalPages(1);
     setSelectedMedia(null);
     setRecommendations([]);
     setSelectedRecipe(null);
@@ -142,57 +141,112 @@ export default function TasteAndWatchApp() {
     setAppState("EMPTY");
   };
 
+
+  const loadPage = async (page: number) => {
+    try {
+      setAppState("SEARCHING");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const res = await fuzzySearchMedia(query, page);
+      setMediaResults(res.results);
+      setCurrentPage(res.page || page);
+      setTotalPages(res.totalPages || 1);
+      setAppState("SEARCH_RESULTS");
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load page.");
+      setAppState("ERROR");
+    }
+  };
+
   const formatConnectionType = (type: string) => {
     switch (type) {
-      case "screen_associated": return "Screen Associated";
-      case "thematic": return "Thematic Match";
-      case "vibe": return "Vibe Match";
+      case "screen_associated": return "On-Screen Connection";
+      case "thematic": return "Thematic Pairing";
+      case "vibe": return "Atmospheric Match";
       default: return type;
     }
   };
 
+  // ---------------------------------------------------------------------------
+  // RENDER HELPERS
+  // ---------------------------------------------------------------------------
+
+  const isMediaContextActive = [
+    "MEDIA_SELECTED", "RECOMMENDATIONS_LOADING", "RECOMMENDATIONS_READY",
+    "RECIPE_LOADING", "RECIPE_OPEN", "TUTORIAL_LOADING", "TUTORIAL_HANDOFF"
+  ].includes(appState);
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-50 flex flex-col font-sans">
-      <main className="flex-grow flex flex-col items-center justify-center p-6 relative z-10 w-full max-w-7xl mx-auto">
+    <div className="min-h-screen bg-stone-950 text-stone-50 font-sans selection:bg-orange-500/30 overflow-x-hidden">
 
-        {/* TOP SEARCH BAR */}
-        {appState !== "EMPTY" && (
-          <div className="absolute top-6 left-6 right-6 md:left-12 md:right-12 z-20 flex items-center justify-between">
-            <h2 onClick={handleReset} className="text-xl font-bold tracking-tight cursor-pointer hover:text-emerald-400 transition-colors hidden md:block">
-              Taste & Watch
-            </h2>
-            <form onSubmit={handleSearch} className="relative group w-full md:max-w-md">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-zinc-500">
-                <Search className="w-4 h-4" />
-              </div>
-              <Input
+      {/* -----------------------------------------------------------------------
+          BACKGROUND BACKDROP FOR MEDIA CONTEXT
+          ----------------------------------------------------------------------- */}
+      {isMediaContextActive && selectedMedia && selectedMedia.backdropUrl && (
+        <div className="fixed inset-0 z-0 pointer-events-none transition-opacity duration-1000 ease-in-out opacity-40">
+          <img
+            src={selectedMedia.backdropUrl}
+            alt="Backdrop"
+            className="w-full h-full object-cover object-top opacity-50 mix-blend-luminosity blur-[2px] scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-stone-950/40 via-stone-950/80 to-stone-950" />
+          <div className="absolute inset-0 bg-gradient-to-r from-stone-950 via-stone-950/60 to-transparent md:w-3/4" />
+        </div>
+      )}
+
+      {/* -----------------------------------------------------------------------
+          GLOBAL NAVIGATION / SEARCH BAR (When not empty)
+          ----------------------------------------------------------------------- */}
+      {appState !== "EMPTY" && (
+        <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-stone-950/70 border-b border-stone-800/50 transition-all duration-300">
+          <div className="px-[5%] mx-auto px-6 h-20 flex items-center justify-between gap-6">
+            <button
+              onClick={handleReset}
+              className="group flex items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-sm shrink-0"
+            >
+              <div className="bg-orange-500/10 p-2 rounded-full border border-orange-500/20 group-hover:bg-orange-500/20 transition-colors flex items-center justify-center"><UtensilsCrossed className="w-5 h-5 md:w-6 md:h-6 text-orange-500" strokeWidth={1.5} /></div><h1 className="hidden sm:block text-xl md:text-2xl font-bold tracking-tight text-stone-100 transition-colors group-hover:text-orange-400">
+                Taste & Watch
+              </h1>
+            </button>
+            <form onSubmit={handleSearch} className="relative w-full max-w-xs sm:max-w-sm md:max-w-md group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 group-focus-within:text-orange-400 transition-colors" />
+              <input
                 type="text"
-                placeholder="Search..."
-                className="w-full bg-zinc-900/80 border-zinc-800 text-zinc-100 placeholder:text-zinc-500 pl-10 h-10 rounded-full text-sm focus-visible:ring-emerald-500/50"
+                placeholder="Search a movie or show..."
+                className="w-full bg-stone-900/50 border border-stone-800/80 hover:border-stone-700 focus:border-orange-500/50 text-stone-100 placeholder:text-stone-500 pl-11 pr-4 h-11 rounded-full text-sm outline-none transition-all shadow-sm focus:bg-stone-900"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
             </form>
           </div>
-        )}
+        </header>
+      )}
 
-        {/* EMPTY STATE */}
+      <main className="relative z-10 w-full px-[5%] mx-auto px-6 pb-24 min-h-[calc(100vh-5rem)] flex flex-col">
+
+        {/* -----------------------------------------------------------------------
+            EMPTY / LANDING STATE
+            ----------------------------------------------------------------------- */}
         {appState === "EMPTY" && (
-          <div className="w-full max-w-2xl text-center space-y-8 mt-12 md:mt-0">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight bg-gradient-to-br from-zinc-100 to-zinc-500 bg-clip-text text-transparent">
-              Taste & Watch
-            </h1>
-            <p className="text-lg text-zinc-400">
-              What should I eat while watching this?
-            </p>
-            <form onSubmit={handleSearch} className="relative group">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
-                <Search className="w-5 h-5" />
-              </div>
-              <Input
+          <div className="flex-1 flex flex-col items-center justify-center text-center animate-in fade-in duration-700 zoom-in-95">
+            <div className="mb-10 relative">
+              <div className="absolute inset-0 blur-3xl bg-orange-500/10 rounded-full w-full h-full transform scale-150" />
+              <UtensilsCrossed className="w-16 h-16 mx-auto text-orange-500 mb-6 relative z-10" strokeWidth={1.5} />
+              <h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-stone-50 relative z-10 leading-tight">
+                Taste & Watch
+              </h1>
+              <p className="text-xl md:text-2xl text-stone-400 mt-4 max-w-2xl mx-auto font-light tracking-wide relative z-10">
+                What should I eat while watching this?
+              </p>
+            </div>
+
+            <form onSubmit={handleSearch} className="w-full max-w-2xl relative group z-10">
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-stone-500 group-focus-within:text-orange-400 transition-colors" />
+              <input
                 type="text"
-                placeholder="What are you watching tonight?"
-                className="w-full bg-zinc-900/50 border-zinc-800 text-zinc-100 placeholder:text-zinc-500 pl-12 h-14 rounded-full text-lg focus-visible:ring-emerald-500/50 transition-all shadow-xl border-none"
+                autoFocus
+                placeholder="Enter a movie or TV show title..."
+                className="w-full bg-stone-900/60 backdrop-blur-sm border border-stone-800/80 hover:border-stone-700 text-stone-100 placeholder:text-stone-500 pl-16 pr-6 h-16 md:h-20 rounded-full text-lg md:text-xl outline-none transition-all shadow-2xl focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/10 focus:bg-stone-900"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
@@ -200,373 +254,427 @@ export default function TasteAndWatchApp() {
           </div>
         )}
 
-        {/* SEARCHING STATE */}
-        {appState === "SEARCHING" && (
-          <div className="w-full text-center py-20 text-zinc-400 mt-20">
-            <p className="animate-pulse text-lg">Searching our cinematic archives for &quot;{query}&quot;...</p>
+        {/* -----------------------------------------------------------------------
+            LOADING STATES (Generic)
+            ----------------------------------------------------------------------- */}
+        {(appState === "SEARCHING" || appState === "MEDIA_LOADING") && (
+          <div className="flex-1 flex flex-col items-center justify-center animate-in fade-in duration-500 mt-20">
+            <div className="w-12 h-12 border-2 border-orange-500/20 border-t-orange-500 rounded-full animate-spin mb-6" />
+            <p className="text-stone-400 text-lg tracking-wide">
+              {appState === "SEARCHING" ? "Searching the cinematic archives..." : "Loading title details..."}
+            </p>
           </div>
         )}
 
-        {/* SEARCH_RESULTS STATE */}
+        {/* -----------------------------------------------------------------------
+            SEARCH RESULTS
+            ----------------------------------------------------------------------- */}
         {appState === "SEARCH_RESULTS" && (
-          <div className="w-full mt-24 md:mt-20">
-            <h3 className="text-2xl font-bold mb-6 text-zinc-100">Results for &quot;{query}&quot;</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+          <div className="pt-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
+            <h2 className="text-2xl font-medium tracking-tight text-stone-200 mb-8">
+              Search results for <span className="text-white font-bold">&quot;{query}&quot;</span>
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6 lg:gap-8">
               {mediaResults.map((media) => (
                 <button
                   key={media.id}
-                  type="button"
                   onClick={() => selectMedia(media)}
-                  className="group cursor-pointer bg-zinc-900/50 rounded-xl overflow-hidden border border-zinc-800 hover:border-emerald-500/50 transition-all hover:scale-105 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+                  className="group text-left flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-2xl bg-stone-900/40 backdrop-blur-md border border-stone-700/50 p-3 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.08)] hover:bg-stone-800/50 hover:-translate-y-1 transition-all duration-300"
                 >
-                  <div className="aspect-[2/3] bg-zinc-900 relative">
+                  <div className="aspect-[2/3] w-full rounded-lg overflow-hidden bg-stone-950 mb-3 relative">
                     {media.posterUrl ? (
-                      <img src={media.posterUrl} alt={media.title} className="w-full h-full object-cover" />
+                      <img src={media.posterUrl} alt={media.title} className="w-full h-full object-cover transition-opacity duration-300" loading="lazy" />
                     ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-zinc-600">
-                        {media.mediaType === "movie" ? <Film className="w-8 h-8 mb-2" /> : <Tv className="w-8 h-8 mb-2" />}
-                        <span className="text-sm">No Poster</span>
+                      <div className="w-full h-full flex flex-col items-center justify-center text-stone-600 bg-stone-900/50">
+                        <Film className="w-10 h-10 mb-3" strokeWidth={1} />
+                        <span className="text-xs uppercase tracking-widest font-medium">No Poster</span>
                       </div>
                     )}
-                    <div className="absolute top-2 right-2 bg-zinc-950/80 px-2 py-1 rounded text-xs text-zinc-300 font-medium border border-zinc-800 flex items-center gap-1.5 backdrop-blur-sm">
-                      {media.mediaType === "movie" ? <Film className="w-3 h-3 text-emerald-400" /> : <Tv className="w-3 h-3 text-blue-400" />}
+                    <div className="absolute top-2 left-2 bg-stone-950/80 backdrop-blur-md px-2 py-1 rounded text-[10px] uppercase tracking-wider text-stone-300 font-bold border border-stone-700/50 flex items-center gap-1.5 shadow-sm">
+                      {media.mediaType === "movie" ? <Film className="w-3 h-3 text-orange-400" /> : <Tv className="w-3 h-3 text-blue-400" />}
                       {media.mediaType === "movie" ? "Movie" : "TV"}
                     </div>
                   </div>
-                  <div className="p-4">
-                    <h4 className="font-semibold text-zinc-100 truncate group-hover:text-emerald-400 transition-colors">
+                  <div className="px-1 pb-1">
+                    <h3 className="font-bold text-stone-100 text-sm md:text-base leading-snug group-hover:text-orange-400 transition-colors line-clamp-2">
                       {media.title}
-                    </h4>
-                    <p className="text-sm text-zinc-500 mt-1">{media.releaseYear || "Unknown Year"}</p>
+                    </h3>
+                    <p className="text-sm text-stone-500 mt-1 font-medium">{media.releaseYear || "Unknown Year"}</p>
                   </div>
                 </button>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* MEDIA_LOADING STATE */}
-        {appState === "MEDIA_LOADING" && (
-          <div className="w-full text-center py-20 text-zinc-400 mt-20">
-            <p className="animate-pulse text-lg">Loading details...</p>
-          </div>
-        )}
-
-        {/* ERROR STATE */}
-        {appState === "ERROR" && (
-          <div className="w-full text-center py-20 mt-20">
-            <p className="text-red-400 text-lg mb-4">{error}</p>
-            {selectedMedia && recommendations.length > 0 ? (
-              <button onClick={() => setAppState("RECOMMENDATIONS_READY")} className="text-emerald-400 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-sm px-2 py-1">
-                Back to Recommendations
-              </button>
-            ) : selectedMedia ? (
-              <button onClick={() => setAppState("MEDIA_SELECTED")} className="text-emerald-400 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-sm px-2 py-1">
-                Back to Movie (Retry)
-              </button>
-            ) : (
-              <button onClick={handleReset} className="text-emerald-400 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-sm px-2 py-1">
-                Back to Home
-              </button>
+            
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="mt-12 flex items-center justify-center gap-4">
+                <button
+                  onClick={() => loadPage(currentPage - 1)}
+                  disabled={currentPage <= 1}
+                  className="px-5 py-2.5 rounded-full bg-stone-900/80 hover:bg-stone-800 disabled:opacity-50 disabled:hover:bg-stone-900/80 text-stone-200 text-sm font-semibold transition-colors border border-stone-800/80"
+                >
+                  Previous
+                </button>
+                <span className="text-stone-400 text-sm font-medium">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={() => loadPage(currentPage + 1)}
+                  disabled={currentPage >= totalPages}
+                  className="px-5 py-2.5 rounded-full bg-stone-900/80 hover:bg-stone-800 disabled:opacity-50 disabled:hover:bg-stone-900/80 text-stone-200 text-sm font-semibold transition-colors border border-stone-800/80"
+                >
+                  Next
+                </button>
+              </div>
             )}
           </div>
         )}
 
-        {/* MEDIA_SELECTED & LATER STATES (Keep Hero context alive) */}
-        {(appState === "MEDIA_SELECTED" || appState === "RECOMMENDATIONS_LOADING" || appState === "RECOMMENDATIONS_READY" || appState === "RECIPE_LOADING" || appState === "RECIPE_OPEN" || appState === "TUTORIAL_LOADING" || appState === "TUTORIAL_HANDOFF") && selectedMedia && (
-          <div className="w-full mt-24 md:mt-20">
-            {appState === "MEDIA_SELECTED" && (
-              <button
-                onClick={() => setAppState("SEARCH_RESULTS")}
-                className="text-emerald-400 hover:underline mb-6 block text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-sm px-2 py-1 -ml-2"
-              >
-                &larr; Back to results
-              </button>
-            )}
+        {/* -----------------------------------------------------------------------
+            MEDIA CONTEXT (Selected Movie + Recommendations)
+            ----------------------------------------------------------------------- */}
+        {isMediaContextActive && selectedMedia && (
+          <div className="pt-12 md:pt-16 animate-in fade-in duration-1000 flex flex-col md:flex-row gap-10 lg:gap-16">
 
-            <div className="flex flex-col md:flex-row gap-8 items-start mb-12">
-              {/* Media Poster */}
-              <div className="w-full md:w-1/3 max-w-sm mx-auto md:mx-0 flex-shrink-0">
-                <div className="aspect-[2/3] bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden shadow-2xl relative">
-                  {selectedMedia.posterUrl ? (
-                    <img
-                      src={selectedMedia.posterUrl}
-                      alt={selectedMedia.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-zinc-600">
-                      {selectedMedia.mediaType === "movie" ? <Film className="w-12 h-12 mb-4 opacity-50" /> : <Tv className="w-12 h-12 mb-4 opacity-50" />}
-                      <span>No Poster</span>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent opacity-80 pointer-events-none" />
-                </div>
+            {/* LEFT COLUMN: Media Info */}
+            <div className="w-full md:w-[350px] lg:w-[400px] flex-shrink-0 flex flex-col">
+
+              <div className="aspect-[2/3] w-[180px] md:w-full mx-auto md:mx-0 rounded-2xl overflow-hidden bg-stone-900 border border-stone-800/50 shadow-2xl relative mb-8">
+                {selectedMedia.posterUrl ? (
+                  <img src={selectedMedia.posterUrl} alt={selectedMedia.title} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-stone-600 bg-stone-900/50">
+                    <span className="text-sm uppercase tracking-widest">No Poster</span>
+                  </div>
+                )}
               </div>
 
-              {/* Media Info */}
-              <div className="flex-1 space-y-6">
+              <div className="text-center md:text-left space-y-6">
                 <div>
-                  <div className="flex flex-wrap items-center gap-3 mb-3">
-                    <span className="bg-zinc-800 px-3 py-1 rounded-full text-zinc-200 text-sm font-medium flex items-center gap-2 border border-zinc-700">
-                      {selectedMedia.mediaType === "movie" ? <Film className="w-4 h-4 text-emerald-400" /> : <Tv className="w-4 h-4 text-blue-400" />}
-                      {selectedMedia.mediaType === "movie" ? "Movie" : "TV Show"}
-                    </span>
-                    <span className="bg-zinc-800/50 px-2.5 py-1 rounded-md text-zinc-400 font-medium text-sm">
+                  <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-white mb-4 leading-tight">
+                    {selectedMedia.title}
+                  </h2>
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 text-sm mb-6">
+                    <span className="bg-orange-500/10 text-orange-400 px-3 py-1 rounded-full font-medium border border-orange-500/20">
                       {selectedMedia.releaseYear || "Unknown Year"}
                     </span>
-                    {selectedMedia.genres.map((genre) => (
-                      <span key={genre} className="bg-zinc-800/30 px-2.5 py-1 rounded-md text-zinc-500 font-medium text-sm">
+                    {selectedMedia.genres.slice(0, 3).map((genre) => (
+                      <span key={genre} className="bg-stone-900/80 text-stone-400 px-3 py-1 rounded-full border border-stone-800">
                         {genre}
                       </span>
                     ))}
                   </div>
-                  <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-white mb-6">
-                    {selectedMedia.title}
-                  </h2>
-                  <p className="text-zinc-400 text-base md:text-lg leading-relaxed max-w-2xl">
+                  <p className="text-stone-300 leading-relaxed text-sm md:text-base font-light">
                     {selectedMedia.overview || "No overview available."}
                   </p>
                 </div>
-
-                {appState === "MEDIA_SELECTED" && (
-                  <div className="pt-8 border-t border-zinc-800/50">
-                    <button
-                      className="bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold px-6 py-3 rounded-full transition-colors shadow-lg shadow-emerald-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
-                      onClick={handleFindPairings}
-                    >
-                      Find Recipe Pairings
-                    </button>
-                  </div>
-                )}
               </div>
+
             </div>
 
-            {/* RECOMMENDATIONS SECTION */}
-            {appState === "RECOMMENDATIONS_LOADING" && (
-              <div className="w-full text-center py-20 text-zinc-400 border-t border-zinc-800/50">
-                <ChefHat className="w-12 h-12 mx-auto mb-4 animate-bounce text-emerald-500" />
-                <p className="animate-pulse text-lg">Our virtual chefs are brainstorming recipes for &quot;{selectedMedia.title}&quot;...</p>
-              </div>
-            )}
+            {/* RIGHT COLUMN: The Pairings / Interaction Area */}
+            <div className="flex-1 flex flex-col min-w-0 pb-12">
 
-            {/* RECIPE LOADING STATE */}
-            {appState === "RECIPE_LOADING" && (
-              <div className="w-full text-center py-20 text-zinc-400 border-t border-zinc-800/50">
-                <UtensilsCrossed className="w-12 h-12 mx-auto mb-4 animate-bounce text-emerald-500" />
-                <p className="animate-pulse text-lg">Consulting our cookbooks for the perfect recipe...</p>
-              </div>
-            )}
-
-            {/* TUTORIAL LOADING STATE */}
-            {appState === "TUTORIAL_LOADING" && (
-              <div className="w-full text-center py-20 text-zinc-400 border-t border-zinc-800/50">
-                <div className="w-12 h-12 mx-auto mb-4 animate-bounce text-red-500 flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" className="w-full h-full"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" /></svg>
+              {appState === "MEDIA_SELECTED" && (
+                <div className="flex-1 flex flex-col items-center justify-center text-center py-20 md:py-32 border-2 border-dashed border-stone-800 rounded-3xl bg-stone-900/20 animate-in fade-in slide-in-from-bottom-8">
+                  <ChefHat className="w-16 h-16 text-stone-700 mb-6" strokeWidth={1} />
+                  <h3 className="text-2xl font-medium text-stone-200 mb-3">Ready to pair the perfect meal?</h3>
+                  <p className="text-stone-500 mb-8 max-w-sm">
+                    Our AI chefs will analyze the atmosphere, setting, and themes of this title to suggest perfectly curated recipes.
+                  </p>
+                  <button
+                    onClick={handleFindPairings}
+                    className="group relative inline-flex items-center justify-center gap-3 bg-orange-600 hover:bg-orange-500 text-white font-semibold text-lg px-8 py-4 rounded-full transition-all shadow-[0_0_40px_-10px_rgba(234,88,12,0.4)] hover:shadow-[0_0_60px_-15px_rgba(234,88,12,0.6)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-500/30"
+                  >
+                    <UtensilsCrossed className="w-5 h-5 transition-transform group-hover:rotate-12" />
+                    Generate Recipe Pairings
+                  </button>
                 </div>
-                <p className="animate-pulse text-lg">Finding the best video tutorial...</p>
-              </div>
-            )}
+              )}
 
-            {(appState === "RECOMMENDATIONS_READY" || appState === "RECIPE_OPEN") && (
-              <div className="w-full border-t border-zinc-800/50 pt-12">
-                <h3 className="text-3xl font-bold mb-8 text-zinc-100 flex items-center gap-3">
-                  <UtensilsCrossed className="text-emerald-400" />
-                  Recommended Pairings
-                </h3>
+              {appState === "RECOMMENDATIONS_LOADING" && (
+                <div className="flex-1 flex flex-col items-center justify-center text-center py-20">
+                  <div className="relative w-20 h-20 mb-8">
+                    <div className="absolute inset-0 border-4 border-stone-800 rounded-full"></div>
+                    <div className="absolute inset-0 border-4 border-orange-500 rounded-full border-t-transparent animate-spin"></div>
+                    <ChefHat className="absolute inset-0 m-auto w-8 h-8 text-orange-500" strokeWidth={1.5} />
+                  </div>
+                  <h3 className="text-xl font-medium text-stone-200 animate-pulse">
+                    Crafting the perfect menu...
+                  </h3>
+                  <p className="text-stone-500 mt-3 text-sm">Analyzing thematic elements and on-screen cuisine</p>
+                </div>
+              )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {recommendations.map((rec, i) => (
-                    <div key={i} className="bg-zinc-900/50 rounded-2xl border border-zinc-800 p-6 flex flex-col h-full hover:border-emerald-500/50 transition-colors">
-                      <div className="flex items-start justify-between mb-4">
-                        <h4 className="text-xl font-bold text-emerald-400 leading-tight">
-                          {rec.name}
-                        </h4>
-                        <span className="text-xs font-medium bg-zinc-800 px-2 py-1 rounded text-zinc-300 whitespace-nowrap ml-3">
-                          {formatConnectionType(rec.connectionType)}
-                        </span>
-                      </div>
-
-                      <p className="text-zinc-400 text-sm mb-6 flex-grow">
-                        {rec.reason}
-                      </p>
-
-                      <div className="flex items-center gap-4 text-xs text-zinc-500 font-medium mb-6 pt-4 border-t border-zinc-800/50">
-                        <span className="flex items-center gap-1.5 bg-zinc-950 px-2 py-1 rounded">
-                          <Clock className="w-3.5 h-3.5" />
-                          {rec.prepTimeMinutes} min
-                        </span>
-                        <span className="flex items-center gap-1.5 bg-zinc-950 px-2 py-1 rounded capitalize">
-                          <ChefHat className="w-3.5 h-3.5" />
-                          {rec.difficulty}
-                        </span>
-                      </div>
-
-                      {appState === "RECOMMENDATIONS_READY" && (
-                        <button
-                          onClick={() => handleFetchRecipe(rec)}
-                          className="w-full bg-zinc-100 hover:bg-white text-zinc-900 font-semibold py-2.5 rounded-lg transition-colors text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
-                        >
-                          Find Recipe
-                        </button>
-                      )}
+              {(appState === "RECOMMENDATIONS_READY" || appState === "RECIPE_LOADING" || appState === "RECIPE_OPEN" || appState === "TUTORIAL_LOADING" || appState === "TUTORIAL_HANDOFF") && recommendations.length > 0 && (
+                <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
+                  <div className="flex items-end justify-between mb-8 pb-4 border-b border-stone-800/60">
+                    <div>
+                      <h3 className="text-sm uppercase tracking-widest text-stone-400 font-semibold mb-2">Curated Menu</h3>
+                      <h2 className="text-2xl md:text-3xl font-bold text-stone-100 flex items-center gap-3">
+                        Recommended Pairings
+                      </h2>
                     </div>
-                  ))}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {recommendations.map((rec, i) => (
+                      <div
+                        key={i}
+                        className="group flex flex-col bg-stone-900/60 backdrop-blur-sm border border-stone-800/80 rounded-2xl overflow-hidden hover:bg-stone-900 hover:border-orange-500/40 transition-all duration-300 shadow-lg hover:shadow-orange-900/10"
+                      >
+                        <div className="p-6 flex-1 flex flex-col">
+                          <div className="flex items-start justify-between mb-4 gap-4">
+                            <h4 className="text-xl md:text-2xl font-bold text-stone-100 leading-tight group-hover:text-orange-400 transition-colors">
+                              {rec.name}
+                            </h4>
+                            <span className="flex-shrink-0 text-[10px] uppercase tracking-wider font-bold bg-stone-800/80 text-stone-300 px-2.5 py-1 rounded-md border border-stone-700/50">
+                              {formatConnectionType(rec.connectionType)}
+                            </span>
+                          </div>
+
+                          <p className="text-stone-400 text-sm md:text-base leading-relaxed mb-8 flex-1 font-light">
+                            {rec.reason}
+                          </p>
+
+                          <div className="flex items-center gap-4 text-xs font-semibold text-stone-400 uppercase tracking-wider mb-6">
+                            <span className="flex items-center gap-1.5 bg-stone-950/50 px-3 py-1.5 rounded-lg border border-stone-800/50">
+                              <Clock className="w-3.5 h-3.5 text-stone-500" />
+                              {rec.prepTimeMinutes} min
+                            </span>
+                            <span className="flex items-center gap-1.5 bg-stone-950/50 px-3 py-1.5 rounded-lg border border-stone-800/50">
+                              <ChefHat className="w-3.5 h-3.5 text-stone-500" />
+                              {rec.difficulty}
+                            </span>
+                          </div>
+
+                          <button
+                            onClick={() => handleFetchRecipe(rec)}
+                            disabled={appState !== "RECOMMENDATIONS_READY"}
+                            className="w-full flex items-center justify-between bg-stone-100 hover:bg-white disabled:opacity-50 disabled:hover:bg-stone-100 text-stone-950 font-bold py-3.5 px-5 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900"
+                          >
+                            <span>View Recipe</span>
+                            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
+
+            </div>
+          </div>
+        )}
+
+        {/* -----------------------------------------------------------------------
+            ERROR STATE
+            ----------------------------------------------------------------------- */}
+        {appState === "ERROR" && (
+          <div className="flex-1 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in-95 mt-20 max-w-md mx-auto">
+            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
+              <Info className="w-8 h-8 text-red-500" />
+            </div>
+            <h3 className="text-2xl font-bold text-stone-100 mb-3">Something went wrong</h3>
+            <p className="text-stone-400 text-lg leading-relaxed mb-8">{error}</p>
+
+            {selectedMedia && recommendations.length > 0 ? (
+              <button onClick={() => setAppState("RECOMMENDATIONS_READY")} className="bg-stone-800 hover:bg-stone-700 text-stone-100 font-semibold px-6 py-3 rounded-full transition-colors">
+                Return to Recommendations
+              </button>
+            ) : selectedMedia ? (
+              <button onClick={() => setAppState("MEDIA_SELECTED")} className="bg-stone-800 hover:bg-stone-700 text-stone-100 font-semibold px-6 py-3 rounded-full transition-colors">
+                Return to Movie Details
+              </button>
+            ) : (
+              <button onClick={handleReset} className="bg-stone-800 hover:bg-stone-700 text-stone-100 font-semibold px-6 py-3 rounded-full transition-colors">
+                Go to Home
+              </button>
             )}
           </div>
         )}
 
-        {/* RECIPE OVERLAY/MODAL */}
-        {appState === "RECIPE_OPEN" && selectedRecipe && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-sm overflow-y-auto">
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="recipe-modal-title"
-              className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto flex flex-col mt-10 mb-10"
-            >
+      </main>
 
-              {/* Modal Header */}
-              <div className="sticky top-0 bg-zinc-900/95 backdrop-blur z-10 border-b border-zinc-800 p-6 flex items-center justify-between">
-                <div>
-                  <h3 id="recipe-modal-title" className="text-2xl font-bold text-zinc-50">{selectedRecipe.name}</h3>
-                  <div className="flex items-center gap-3 mt-2 text-sm text-zinc-400">
-                    {selectedRecipe.category && <span>{selectedRecipe.category}</span>}
-                    {selectedRecipe.area && (
-                      <>
-                        <span className="w-1 h-1 rounded-full bg-zinc-700" />
-                        <span>{selectedRecipe.area}</span>
-                      </>
-                    )}
+      {/* -----------------------------------------------------------------------
+          RECIPE MODAL (Full-screen sheet style)
+          ----------------------------------------------------------------------- */}
+      {appState === "RECIPE_OPEN" && selectedRecipe && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-stone-950/80 backdrop-blur-md sm:p-6 overflow-hidden animate-in fade-in duration-300">
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full sm:max-w-5xl bg-stone-950 sm:border sm:border-stone-800 sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[95vh] sm:h-[85vh] animate-in slide-in-from-bottom-12 duration-500 relative"
+          >
+
+            {/* Close Button Floating */}
+            <button
+              onClick={closeRecipe}
+              className="absolute top-4 right-4 z-50 p-2.5 bg-stone-900/80 backdrop-blur hover:bg-stone-800 text-stone-400 hover:text-white rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 shadow-lg"
+              aria-label="Close Recipe"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex flex-col lg:flex-row h-full overflow-y-auto lg:overflow-hidden">
+
+              {/* Recipe Hero Image (Left on Desktop, Top on Mobile) */}
+              <div className="w-full lg:w-5/12 relative flex-shrink-0 h-[40vh] lg:h-full bg-stone-900">
+                {selectedRecipe.imageUrl ? (
+                  <>
+                    <img
+                      src={selectedRecipe.imageUrl}
+                      alt={selectedRecipe.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-transparent to-transparent opacity-80 lg:hidden" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-stone-950 opacity-90 hidden lg:block" />
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <UtensilsCrossed className="w-16 h-16 text-stone-800" />
                   </div>
+                )}
+
+                {/* Mobile Title Overlay */}
+                <div className="absolute bottom-6 left-6 right-6 lg:hidden">
+                  <div className="flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-widest text-orange-400">
+                    {selectedRecipe.category}
+                    {selectedRecipe.area && <span className="text-stone-500">•</span>}
+                    {selectedRecipe.area}
+                  </div>
+                  <h3 className="text-3xl font-bold text-white leading-tight drop-shadow-md">
+                    {selectedRecipe.name}
+                  </h3>
                 </div>
-                <button
-                  onClick={closeRecipe}
-                  aria-label="Close Recipe"
-                  className="p-2 bg-zinc-800/50 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-zinc-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
-                >
-                  <X className="w-5 h-5" />
-                </button>
               </div>
 
-              {/* Modal Body */}
-              <div className="p-6 md:p-8 flex flex-col lg:flex-row gap-10">
+              {/* Recipe Content (Right on Desktop, Bottom on Mobile) */}
+              <div className="w-full lg:w-7/12 flex flex-col h-full bg-stone-950 lg:overflow-y-auto custom-scrollbar">
+                <div className="p-6 md:p-10 lg:p-12 flex-1">
 
-                {/* Left Col: Image & Ingredients */}
-                <div className="w-full lg:w-1/3 space-y-8">
-                  {selectedRecipe.imageUrl && (
-                    <div className="aspect-square rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950">
-                      <img
-                        src={selectedRecipe.imageUrl}
-                        alt={selectedRecipe.name}
-                        className="w-full h-full object-cover"
-                      />
+                  {/* Desktop Title */}
+                  <div className="hidden lg:block mb-10">
+                    <div className="flex items-center gap-2 mb-3 text-xs font-bold uppercase tracking-widest text-orange-400">
+                      {selectedRecipe.category}
+                      {selectedRecipe.area && <span className="text-stone-700">•</span>}
+                      {selectedRecipe.area}
                     </div>
-                  )}
+                    <h3 className="text-4xl lg:text-5xl font-bold text-stone-100 leading-tight">
+                      {selectedRecipe.name}
+                    </h3>
+                  </div>
 
-                  <div>
-                    <h4 className="text-lg font-semibold text-emerald-400 mb-4 flex items-center gap-2">
-                      <ChefHat className="w-5 h-5" /> Ingredients
-                    </h4>
-                    <ul className="space-y-3">
-                      {selectedRecipe.ingredients.map((ing, idx) => (
-                        <li key={idx} className="flex justify-between items-baseline border-b border-zinc-800/50 pb-2 text-sm">
-                          <span className="text-zinc-200 capitalize">{ing.ingredient}</span>
-                          <span className="text-zinc-500 text-right ml-4">{ing.measure}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  <div className="flex flex-col xl:flex-row gap-12">
+                    {/* Ingredients */}
+                    <div className="w-full xl:w-5/12 flex-shrink-0">
+                      <h4 className="text-lg font-bold text-stone-100 mb-6 flex items-center gap-2 border-b border-stone-800 pb-4">
+                        Ingredients
+                      </h4>
+                      <ul className="space-y-4">
+                        {selectedRecipe.ingredients.map((ing, idx) => (
+                          <li key={idx} className="flex justify-between items-baseline text-sm">
+                            <span className="text-stone-300 font-medium capitalize pr-4">{ing.ingredient}</span>
+                            <span className="text-stone-500 text-right shrink-0">{ing.measure}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Instructions */}
+                    <div className="w-full xl:w-7/12">
+                      <h4 className="text-lg font-bold text-stone-100 mb-6 flex items-center gap-2 border-b border-stone-800 pb-4">
+                        Instructions
+                      </h4>
+                      <div className="prose prose-invert prose-stone max-w-none prose-p:text-stone-400 prose-p:leading-relaxed prose-p:mb-6">
+                        {selectedRecipe.instructions.split("\n").filter(p => p.trim() !== "").map((para, idx) => (
+                          <p key={idx}>{para}</p>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Right Col: Instructions */}
-                <div className="w-full lg:w-2/3 space-y-8">
-                  <div>
-                    <h4 className="text-lg font-semibold text-emerald-400 mb-4">Instructions</h4>
-                    <div className="prose prose-invert prose-zinc max-w-none">
-                      {selectedRecipe.instructions.split("\n").filter(p => p.trim() !== "").map((para, idx) => (
-                        <p key={idx} className="mb-4 text-zinc-300 leading-relaxed">
-                          {para}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* External Links */}
-                  <div className="pt-6 border-t border-zinc-800 flex flex-wrap gap-4">
+                {/* Sticky Footer CTA */}
+                <div className="sticky bottom-0 bg-stone-950/95 backdrop-blur-md border-t border-stone-800 p-6 md:px-10 flex flex-col sm:flex-row items-center gap-4 justify-between shrink-0">
+                  <div className="flex items-center gap-4 w-full sm:w-auto">
                     {selectedRecipe.sourceUrl && (
                       <a
                         href={selectedRecipe.sourceUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-2 text-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-4 py-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 text-sm font-semibold bg-stone-900 hover:bg-stone-800 text-stone-300 px-5 py-3.5 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-500 border border-stone-800"
                       >
-                        <ExternalLink className="w-4 h-4" /> Original Recipe Source
+                        <ExternalLink className="w-4 h-4" /> Source
                       </a>
                     )}
-                    <button
-                      onClick={handleFindTutorial}
-                      className="flex items-center gap-2 text-sm bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
-                    >
-                      Find Video Tutorial
-                    </button>
                   </div>
+                  <button
+                    onClick={handleFindTutorial}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 text-sm font-bold bg-red-600 hover:bg-red-500 text-white px-8 py-3.5 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 shadow-lg shadow-red-900/20"
+                  >
+                    <PlayCircle className="w-5 h-5" />
+                    Watch Video Tutorial
+                  </button>
                 </div>
-
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* TUTORIAL HANDOFF OVERLAY/MODAL */}
-        {appState === "TUTORIAL_HANDOFF" && tutorialResult && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/90 backdrop-blur-sm overflow-y-auto">
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="tutorial-modal-title"
-              className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-y-auto flex flex-col mt-10 mb-10 text-center p-8 relative"
+      {/* -----------------------------------------------------------------------
+          TUTORIAL HANDOFF MODAL
+          ----------------------------------------------------------------------- */}
+      {appState === "TUTORIAL_HANDOFF" && tutorialResult && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-stone-950/90 backdrop-blur-sm animate-in fade-in duration-300">
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="bg-stone-900 border border-stone-800 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col relative animate-in zoom-in-95 duration-300"
+          >
+            <button
+              onClick={() => setAppState("RECIPE_OPEN")}
+              className="absolute top-4 right-4 z-10 p-2 bg-stone-950/50 hover:bg-stone-800 rounded-full text-stone-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 backdrop-blur"
+              aria-label="Close"
             >
-              <button
-                onClick={() => setAppState("RECIPE_OPEN")}
-                className="absolute top-6 right-6 p-2 bg-zinc-800/50 hover:bg-zinc-800 rounded-full text-zinc-400 hover:text-zinc-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
-                aria-label="Close"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <X className="w-5 h-5" />
+            </button>
 
-              <div className="w-16 h-16 mx-auto mb-6 text-red-500 bg-red-500/10 rounded-full flex items-center justify-center">
-                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" /></svg>
-              </div>
-
-              <h3 id="tutorial-modal-title" className="text-2xl font-bold text-zinc-50 mb-4">
-                {tutorialResult.provider === "youtube_search" ? "Search YouTube for Tutorial" : "Tutorial Found!"}
-              </h3>
-
-              {tutorialResult.thumbnail && (
-                <div className="w-full max-w-sm mx-auto aspect-video rounded-xl overflow-hidden border border-zinc-800 mb-6 bg-zinc-950">
-                  <img
-                    src={tutorialResult.thumbnail}
-                    alt={tutorialResult.title}
-                    className="w-full h-full object-cover"
-                  />
+            {tutorialResult.thumbnail ? (
+              <div className="w-full aspect-video relative bg-stone-950">
+                <img
+                  src={tutorialResult.thumbnail}
+                  alt={tutorialResult.title}
+                  className="w-full h-full object-cover opacity-90"
+                />
+                <div className="absolute inset-0 bg-black/20 flex items-center justify-center group pointer-events-none">
+                  <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-2xl shadow-red-900/50 group-hover:scale-110 transition-transform">
+                    <PlayCircle className="w-8 h-8 text-white fill-current ml-1" />
+                  </div>
                 </div>
-              )}
+              </div>
+            ) : (
+              <div className="w-full aspect-video bg-stone-950 flex items-center justify-center">
+                <PlayCircle className="w-16 h-16 text-stone-800" />
+              </div>
+            )}
 
-              <p className="text-zinc-300 mb-2 font-medium">{tutorialResult.title}</p>
+            <div className="p-8 text-center">
+              <h3 className="text-xl font-bold text-stone-100 mb-2 leading-tight">
+                {tutorialResult.title}
+              </h3>
               {tutorialResult.channelTitle && (
-                <p className="text-zinc-500 text-sm mb-8">by {tutorialResult.channelTitle}</p>
+                <p className="text-stone-500 text-sm mb-8 font-medium">by {tutorialResult.channelTitle}</p>
               )}
 
               <a
                 href={tutorialResult.url}
                 target="_blank"
                 rel="noreferrer"
-                className="w-full max-w-sm mx-auto flex items-center justify-center gap-2 text-lg bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-4 rounded-xl transition-colors mb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
+                className="w-full flex items-center justify-center gap-2 text-base font-bold bg-white hover:bg-stone-200 text-red-600 px-6 py-4 rounded-xl transition-colors mb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 shadow-lg"
               >
-                Watch on YouTube <ExternalLink className="w-5 h-5" />
+                Watch on YouTube <ExternalLink className="w-4 h-4" />
               </a>
 
               {tutorialResult.provider === "youtube_api" && selectedRecommendation && (
@@ -574,22 +682,33 @@ export default function TasteAndWatchApp() {
                   href={`https://www.youtube.com/results?search_query=${encodeURIComponent(selectedRecommendation.youtubeQuery)}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="w-full max-w-sm mx-auto flex items-center justify-center gap-2 text-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium px-6 py-3 rounded-xl transition-colors mb-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
+                  className="inline-block text-sm text-stone-500 hover:text-stone-300 font-medium transition-colors border-b border-transparent hover:border-stone-500 pb-0.5"
                 >
-                  More tutorials on YouTube <ExternalLink className="w-4 h-4" />
+                  View more results on YouTube
                 </a>
               )}
-
-              <button
-                onClick={() => setAppState("RECIPE_OPEN")}
-                className="text-zinc-400 hover:text-zinc-200 transition-colors text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 rounded-sm px-2 py-1"
-              >
-                Back to Recipe
-              </button>
             </div>
           </div>
-        )}
-      </main>
+        </div>
+      )}
+
+      {/* Global styles for custom scrollbar within this page scope if needed */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: #292524;
+          border-radius: 20px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: #44403c;
+        }
+      `}} />
     </div>
   );
 }
