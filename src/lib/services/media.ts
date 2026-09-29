@@ -72,7 +72,7 @@ export async function searchMedia(query: string, page: number = 1): Promise<{ re
             return { id, path: textless.file_path };
           }
         }
-      } catch (e) {
+      } catch {
         // Ignore errors for individual images
       }
       return { id: item.id, path: null };
