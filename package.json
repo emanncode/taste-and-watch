@@ -37,5 +37,18 @@
     "eslint-config-next": "16.3.6",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "author": {
+    "name": "Ifeoluwa Olajubaje",
+    "email": "olajubajeifeoluwa93@gmail.com",
+    "url": "https://emanncode.work"
+  },
+  "homepage": "https://emanncode.work",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/emanncode/taste-and-watch.git"
+  },
+  "bugs": {
+    "url": "https://github.com/emanncode/taste-and-watch/issues"
   }
 }

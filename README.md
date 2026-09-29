@@ -2,6 +2,19 @@
 
 **Taste & Watch is an automated "movie night" planner.** It takes the media a user wants to watch and dynamically generates a menu of recipes that match the vibe, genre, or cultural origin of that specific movie or show.
 
+## Author
+
+**Ifeoluwa Olajubaje** — Full-Stack Developer
+
+[![GitHub](https://img.shields.io/badge/GitHub-emanncode-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/emanncode)
+[![X](https://img.shields.io/badge/X-@emanncode-000000?style=flat-square&logo=x&logoColor=white)](https://x.com/emanncode)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-emmanuel--olajubaje-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://linkedin.com/in/emmanuel-olajubaje/)
+[![Devpost](https://img.shields.io/badge/Devpost-Emann--Code--01-0A66C2?style=flat-square)](https://devpost.com/Emann-Code-01)
+[![Portfolio](https://img.shields.io/badge/Portfolio-emanncode.work-FF6D00?style=flat-square)](https://emanncode.work)
+[![Email](https://img.shields.io/badge/Email-Contact-EA580C?style=flat-square)](mailto:olajubajeifeoluwa93@gmail.com)
+
+Questions, feedback, or collaboration: [emanncode.work](https://emanncode.work) · [olajubajeifeoluwa93@gmail.com](mailto:olajubajeifeoluwa93@gmail.com)
+
 ## The Value to Movie Lovers
 
 Movie lovers already combine food and entertainment, but they face two massive friction points: decision fatigue ("What should we watch?" and "What should we eat?") and a disconnect between the two.
