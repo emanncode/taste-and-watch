@@ -1,11 +1,31 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useState } from "react";
-import { Search, Film, Tv, ChefHat, Clock, UtensilsCrossed, X, ExternalLink, ArrowRight, PlayCircle, Info } from "lucide-react";
+import { useState, useMemo } from "react";
+import {
+  Search,
+  Film,
+  Tv,
+  ChefHat,
+  Clock,
+  UtensilsCrossed,
+  X,
+  ExternalLink,
+  ArrowRight,
+  PlayCircle,
+  Info,
+} from "lucide-react";
 // import { Input } from "@/components/ui/input";
-import { fuzzySearchMedia, getMediaDetails, MediaSearchResult, MediaDetails } from "@/lib/services/media";
-import { generateRecommendations, Recommendation } from "@/lib/services/recommendation";
+import {
+  fuzzySearchMedia,
+  getMediaDetails,
+  MediaSearchResult,
+  MediaDetails,
+} from "@/lib/services/media";
+import {
+  generateRecommendations,
+  Recommendation,
+} from "@/lib/services/recommendation";
 import { searchRecipe, RecipeDetails } from "@/lib/services/recipe";
 import { searchTutorial, TutorialResult } from "@/lib/services/tutorial";
 
@@ -29,11 +49,20 @@ export default function TasteAndWatchApp() {
   const [mediaResults, setMediaResults] = useState<MediaSearchResult[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [filterType, setFilterType] = useState<"all" | "movie" | "tv">("all");
+  const [sortBy, setSortBy] = useState<
+    "relevance" | "newest" | "oldest" | "title"
+  >("relevance");
   const [selectedMedia, setSelectedMedia] = useState<MediaDetails | null>(null);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
-  const [selectedRecommendation, setSelectedRecommendation] = useState<Recommendation | null>(null);
-  const [selectedRecipe, setSelectedRecipe] = useState<RecipeDetails | null>(null);
-  const [tutorialResult, setTutorialResult] = useState<TutorialResult | null>(null);
+  const [selectedRecommendation, setSelectedRecommendation] =
+    useState<Recommendation | null>(null);
+  const [selectedRecipe, setSelectedRecipe] = useState<RecipeDetails | null>(
+    null,
+  );
+  const [tutorialResult, setTutorialResult] = useState<TutorialResult | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -43,6 +72,8 @@ export default function TasteAndWatchApp() {
     try {
       setAppState("SEARCHING");
       setError(null);
+      setFilterType("all");
+      setSortBy("relevance");
       const res = await fuzzySearchMedia(query, 1);
       setMediaResults(res.results);
       setCurrentPage(res.page || 1);
@@ -50,7 +81,9 @@ export default function TasteAndWatchApp() {
       if (res.results.length > 0) {
         setAppState("SEARCH_RESULTS");
       } else {
-        setError("We couldn't find anything matching that title. Please try another search.");
+        setError(
+          "We couldn't find anything matching that title. Please try another search.",
+        );
         setAppState("ERROR");
       }
     } catch (err) {
@@ -64,7 +97,10 @@ export default function TasteAndWatchApp() {
     try {
       setAppState("MEDIA_LOADING");
       setError(null);
-      const details = await getMediaDetails(mediaResult.id, mediaResult.mediaType);
+      const details = await getMediaDetails(
+        mediaResult.id,
+        mediaResult.mediaType,
+      );
       setSelectedMedia(details);
       setAppState("MEDIA_SELECTED");
     } catch (err) {
@@ -84,7 +120,9 @@ export default function TasteAndWatchApp() {
       setAppState("RECOMMENDATIONS_READY");
     } catch (err) {
       console.error(err);
-      setError("Our chefs couldn't generate pairings at this moment. Please try again.");
+      setError(
+        "Our chefs couldn't generate pairings at this moment. Please try again.",
+      );
       setAppState("ERROR");
     }
   };
@@ -134,6 +172,8 @@ export default function TasteAndWatchApp() {
     setMediaResults([]);
     setCurrentPage(1);
     setTotalPages(1);
+    setFilterType("all");
+    setSortBy("relevance");
     setSelectedMedia(null);
     setRecommendations([]);
     setSelectedRecipe(null);
@@ -141,11 +181,10 @@ export default function TasteAndWatchApp() {
     setAppState("EMPTY");
   };
 
-
   const loadPage = async (page: number) => {
     try {
       setAppState("SEARCHING");
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
       const res = await fuzzySearchMedia(query, page);
       setMediaResults(res.results);
       setCurrentPage(res.page || page);
@@ -160,25 +199,52 @@ export default function TasteAndWatchApp() {
 
   const formatConnectionType = (type: string) => {
     switch (type) {
-      case "screen_associated": return "On-Screen Connection";
-      case "thematic": return "Thematic Pairing";
-      case "vibe": return "Atmospheric Match";
-      default: return type;
+      case "screen_associated":
+        return "On-Screen Connection";
+      case "thematic":
+        return "Thematic Pairing";
+      case "vibe":
+        return "Atmospheric Match";
+      default:
+        return type;
     }
   };
+
+  const processedResults = useMemo(() => {
+    let res = [...mediaResults];
+    if (filterType !== "all") {
+      res = res.filter((m) => m.mediaType === filterType);
+    }
+    if (sortBy === "newest") {
+      res.sort((a, b) =>
+        (b.releaseYear || "0").localeCompare(a.releaseYear || "0"),
+      );
+    } else if (sortBy === "oldest") {
+      res.sort((a, b) =>
+        (a.releaseYear || "9999").localeCompare(b.releaseYear || "9999"),
+      );
+    } else if (sortBy === "title") {
+      res.sort((a, b) => a.title.localeCompare(b.title));
+    }
+    return res;
+  }, [mediaResults, filterType, sortBy]);
 
   // ---------------------------------------------------------------------------
   // RENDER HELPERS
   // ---------------------------------------------------------------------------
 
   const isMediaContextActive = [
-    "MEDIA_SELECTED", "RECOMMENDATIONS_LOADING", "RECOMMENDATIONS_READY",
-    "RECIPE_LOADING", "RECIPE_OPEN", "TUTORIAL_LOADING", "TUTORIAL_HANDOFF"
+    "MEDIA_SELECTED",
+    "RECOMMENDATIONS_LOADING",
+    "RECOMMENDATIONS_READY",
+    "RECIPE_LOADING",
+    "RECIPE_OPEN",
+    "TUTORIAL_LOADING",
+    "TUTORIAL_HANDOFF",
   ].includes(appState);
 
   return (
     <div className="min-h-screen bg-stone-950 text-stone-50 font-sans selection:bg-orange-500/30 overflow-x-hidden">
-
       {/* -----------------------------------------------------------------------
           BACKGROUND BACKDROP FOR MEDIA CONTEXT
           ----------------------------------------------------------------------- */}
@@ -204,11 +270,20 @@ export default function TasteAndWatchApp() {
               onClick={handleReset}
               className="group flex items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-sm shrink-0"
             >
-              <div className="bg-orange-500/10 p-2 rounded-full border border-orange-500/20 group-hover:bg-orange-500/20 transition-colors flex items-center justify-center"><UtensilsCrossed className="w-5 h-5 md:w-6 md:h-6 text-orange-500" strokeWidth={1.5} /></div><h1 className="hidden sm:block text-xl md:text-2xl font-bold tracking-tight text-stone-100 transition-colors group-hover:text-orange-400">
+              <div className="bg-orange-500/10 p-2 rounded-full border border-orange-500/20 group-hover:bg-orange-500/20 transition-colors flex items-center justify-center">
+                <UtensilsCrossed
+                  className="w-5 h-5 md:w-6 md:h-6 text-orange-500"
+                  strokeWidth={1.5}
+                />
+              </div>
+              <h1 className="hidden sm:block text-xl md:text-2xl font-bold tracking-tight text-stone-100 transition-colors group-hover:text-orange-400">
                 Taste & Watch
               </h1>
             </button>
-            <form onSubmit={handleSearch} className="relative w-full max-w-xs sm:max-w-sm md:max-w-md group">
+            <form
+              onSubmit={handleSearch}
+              className="relative w-full max-w-xs sm:max-w-sm md:max-w-md group"
+            >
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 group-focus-within:text-orange-400 transition-colors" />
               <input
                 type="text"
@@ -223,7 +298,6 @@ export default function TasteAndWatchApp() {
       )}
 
       <main className="relative z-10 w-full px-[5%] mx-auto px-6 pb-24 min-h-[calc(100vh-5rem)] flex flex-col">
-
         {/* -----------------------------------------------------------------------
             EMPTY / LANDING STATE
             ----------------------------------------------------------------------- */}
@@ -231,7 +305,10 @@ export default function TasteAndWatchApp() {
           <div className="flex-1 flex flex-col items-center justify-center text-center animate-in fade-in duration-700 zoom-in-95">
             <div className="mb-10 relative">
               <div className="absolute inset-0 blur-3xl bg-orange-500/10 rounded-full w-full h-full transform scale-150" />
-              <UtensilsCrossed className="w-16 h-16 mx-auto text-orange-500 mb-6 relative z-10" strokeWidth={1.5} />
+              <UtensilsCrossed
+                className="w-16 h-16 mx-auto text-orange-500 mb-6 relative z-10"
+                strokeWidth={1.5}
+              />
               <h1 className="text-5xl md:text-7xl font-bold tracking-tighter text-stone-50 relative z-10 leading-tight">
                 Taste & Watch
               </h1>
@@ -240,7 +317,10 @@ export default function TasteAndWatchApp() {
               </p>
             </div>
 
-            <form onSubmit={handleSearch} className="w-full max-w-2xl relative group z-10">
+            <form
+              onSubmit={handleSearch}
+              className="w-full max-w-2xl relative group z-10"
+            >
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-stone-500 group-focus-within:text-orange-400 transition-colors" />
               <input
                 type="text"
@@ -261,7 +341,9 @@ export default function TasteAndWatchApp() {
           <div className="flex-1 flex flex-col items-center justify-center animate-in fade-in duration-500 mt-20">
             <div className="w-12 h-12 border-2 border-orange-500/20 border-t-orange-500 rounded-full animate-spin mb-6" />
             <p className="text-stone-400 text-lg tracking-wide">
-              {appState === "SEARCHING" ? "Searching the cinematic archives..." : "Loading title details..."}
+              {appState === "SEARCHING"
+                ? "Searching the cinematic archives..."
+                : "Loading title details..."}
             </p>
           </div>
         )}
@@ -271,40 +353,89 @@ export default function TasteAndWatchApp() {
             ----------------------------------------------------------------------- */}
         {appState === "SEARCH_RESULTS" && (
           <div className="pt-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
-            <h2 className="text-2xl font-medium tracking-tight text-stone-200 mb-8">
-              Search results for <span className="text-white font-bold">&quot;{query}&quot;</span>
-            </h2>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+              <h2 className="text-2xl font-medium tracking-tight text-stone-200">
+                Search results for{" "}
+                <span className="text-white font-bold">
+                  &quot;{query}&quot;
+                </span>
+              </h2>
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <select
+                  value={filterType}
+                  onChange={(e) =>
+                    setFilterType(e.target.value as "all" | "movie" | "tv")
+                  }
+                  className="bg-stone-900/60 backdrop-blur-sm border border-stone-700/50 text-stone-300 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500 w-full sm:w-auto appearance-none cursor-pointer hover:bg-stone-800 transition-colors"
+                >
+                  <option value="all">All Types</option>
+                  <option value="movie">Movies</option>
+                  <option value="tv">TV Shows</option>
+                </select>
+                <select
+                  value={sortBy}
+                  onChange={(e) =>
+                    setSortBy(
+                      e.target.value as
+                      | "relevance"
+                      | "newest"
+                      | "oldest"
+                      | "title",
+                    )
+                  }
+                  className="bg-stone-900/60 backdrop-blur-sm border border-stone-700/50 text-stone-300 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-orange-500 w-full sm:w-auto appearance-none cursor-pointer hover:bg-stone-800 transition-colors"
+                >
+                  <option value="relevance">Sort: Relevance</option>
+                  <option value="newest">Sort: Newest</option>
+                  <option value="oldest">Sort: Oldest</option>
+                  <option value="title">Sort: Title (A-Z)</option>
+                </select>
+              </div>
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6 lg:gap-8">
-              {mediaResults.map((media) => (
+              {processedResults.length === 0 ? (
+                <div className="col-span-full py-12 text-center text-stone-500">No results match your filters.</div>
+              ) : processedResults.map((media) => (
                 <button
                   key={media.id}
                   onClick={() => selectMedia(media)}
-                  className="group text-left flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-2xl bg-stone-900/40 backdrop-blur-md border border-stone-700/50 p-3 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.08)] hover:bg-stone-800/50 hover:-translate-y-1 transition-all duration-300"
+                  className="group text-left flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-2xl bg-stone-900/40 border border-stone-700/50 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] hover:shadow-[0_10px_40px_-10px_rgba(255,255,255,0.08)] hover:-translate-y-1 transition-all duration-300 overflow-hidden relative aspect-[2/3] w-full"
                 >
-                  <div className="aspect-[2/3] w-full rounded-lg overflow-hidden bg-stone-950 mb-3 relative">
+                  <div className="absolute inset-0 bg-stone-950">
                     {media.posterUrl ? (
-                      <img src={media.posterUrl} alt={media.title} className="w-full h-full object-cover transition-opacity duration-300" loading="lazy" />
+                      <img src={media.posterUrl} alt={media.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center text-stone-600 bg-stone-900/50">
-                        <Film className="w-10 h-10 mb-3" strokeWidth={1} />
+                        {media.mediaType === "movie" ? <Film className="w-10 h-10 mb-3" strokeWidth={1} /> : <Tv className="w-10 h-10 mb-3" strokeWidth={1} />}
                         <span className="text-xs uppercase tracking-widest font-medium">No Poster</span>
                       </div>
                     )}
-                    <div className="absolute top-2 left-2 bg-stone-950/80 backdrop-blur-md px-2 py-1 rounded text-[10px] uppercase tracking-wider text-stone-300 font-bold border border-stone-700/50 flex items-center gap-1.5 shadow-sm">
-                      {media.mediaType === "movie" ? <Film className="w-3 h-3 text-orange-400" /> : <Tv className="w-3 h-3 text-blue-400" />}
-                      {media.mediaType === "movie" ? "Movie" : "TV"}
-                    </div>
                   </div>
-                  <div className="px-1 pb-1">
-                    <h3 className="font-bold text-stone-100 text-sm md:text-base leading-snug group-hover:text-orange-400 transition-colors line-clamp-2">
+
+                  {/* Gradient Overlay for Text Visibility */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-stone-950/95 via-stone-950/40 to-transparent opacity-90 transition-opacity duration-300" />
+
+                  {/* Content at Bottom */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5 flex flex-col justify-end z-10">
+                    <h3 className={`font-bold text-stone-50 leading-tight group-hover:text-orange-400 transition-colors drop-shadow-lg mb-2.5 ${media.title.length > 20 ? 'text-lg md:text-xl' : 'text-xl md:text-2xl'} [text-wrap:balance]`}>
                       {media.title}
                     </h3>
-                    <p className="text-sm text-stone-500 mt-1 font-medium">{media.releaseYear || "Unknown Year"}</p>
+                    <div className="flex flex-wrap items-center gap-1.5 text-[10px] md:text-xs font-bold text-stone-300 uppercase tracking-widest drop-shadow-md">
+                      <span>{media.releaseYear || "N/A"}</span>
+                      <span className="text-stone-500">•</span>
+                      <span>{media.mediaType === "movie" ? "Movie" : "TV"}</span>
+                      {media.primaryGenre && (
+                        <>
+                          <span className="text-stone-500">•</span>
+                          <span className="text-orange-400/90 truncate max-w-[80px] sm:max-w-[100px]">{media.primaryGenre}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </button>
               ))}
             </div>
-            
+
             {/* Pagination Controls */}
             {totalPages > 1 && (
               <div className="mt-12 flex items-center justify-center gap-4">
@@ -335,16 +466,20 @@ export default function TasteAndWatchApp() {
             ----------------------------------------------------------------------- */}
         {isMediaContextActive && selectedMedia && (
           <div className="pt-12 md:pt-16 animate-in fade-in duration-1000 flex flex-col md:flex-row gap-10 lg:gap-16">
-
             {/* LEFT COLUMN: Media Info */}
             <div className="w-full md:w-[350px] lg:w-[400px] flex-shrink-0 flex flex-col">
-
               <div className="aspect-[2/3] w-[180px] md:w-full mx-auto md:mx-0 rounded-2xl overflow-hidden bg-stone-900 border border-stone-800/50 shadow-2xl relative mb-8">
                 {selectedMedia.posterUrl ? (
-                  <img src={selectedMedia.posterUrl} alt={selectedMedia.title} className="w-full h-full object-cover" />
+                  <img
+                    src={selectedMedia.posterUrl}
+                    alt={selectedMedia.title}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-stone-600 bg-stone-900/50">
-                    <span className="text-sm uppercase tracking-widest">No Poster</span>
+                    <span className="text-sm uppercase tracking-widest">
+                      No Poster
+                    </span>
                   </div>
                 )}
               </div>
@@ -359,7 +494,10 @@ export default function TasteAndWatchApp() {
                       {selectedMedia.releaseYear || "Unknown Year"}
                     </span>
                     {selectedMedia.genres.slice(0, 3).map((genre) => (
-                      <span key={genre} className="bg-stone-900/80 text-stone-400 px-3 py-1 rounded-full border border-stone-800">
+                      <span
+                        key={genre}
+                        className="bg-stone-900/80 text-stone-400 px-3 py-1 rounded-full border border-stone-800"
+                      >
                         {genre}
                       </span>
                     ))}
@@ -369,18 +507,22 @@ export default function TasteAndWatchApp() {
                   </p>
                 </div>
               </div>
-
             </div>
 
             {/* RIGHT COLUMN: The Pairings / Interaction Area */}
             <div className="flex-1 flex flex-col min-w-0 pb-12">
-
               {appState === "MEDIA_SELECTED" && (
                 <div className="flex-1 flex flex-col items-center justify-center text-center py-20 md:py-32 border-2 border-dashed border-stone-800 rounded-3xl bg-stone-900/20 animate-in fade-in slide-in-from-bottom-8">
-                  <ChefHat className="w-16 h-16 text-stone-700 mb-6" strokeWidth={1} />
-                  <h3 className="text-2xl font-medium text-stone-200 mb-3">Ready to pair the perfect meal?</h3>
+                  <ChefHat
+                    className="w-16 h-16 text-stone-700 mb-6"
+                    strokeWidth={1}
+                  />
+                  <h3 className="text-2xl font-medium text-stone-200 mb-3">
+                    Ready to pair the perfect meal?
+                  </h3>
                   <p className="text-stone-500 mb-8 max-w-sm">
-                    Our AI chefs will analyze the atmosphere, setting, and themes of this title to suggest perfectly curated recipes.
+                    Our AI chefs will analyze the atmosphere, setting, and
+                    themes of this title to suggest perfectly curated recipes.
                   </p>
                   <button
                     onClick={handleFindPairings}
@@ -397,72 +539,83 @@ export default function TasteAndWatchApp() {
                   <div className="relative w-20 h-20 mb-8">
                     <div className="absolute inset-0 border-4 border-stone-800 rounded-full"></div>
                     <div className="absolute inset-0 border-4 border-orange-500 rounded-full border-t-transparent animate-spin"></div>
-                    <ChefHat className="absolute inset-0 m-auto w-8 h-8 text-orange-500" strokeWidth={1.5} />
+                    <ChefHat
+                      className="absolute inset-0 m-auto w-8 h-8 text-orange-500"
+                      strokeWidth={1.5}
+                    />
                   </div>
                   <h3 className="text-xl font-medium text-stone-200 animate-pulse">
                     Crafting the perfect menu...
                   </h3>
-                  <p className="text-stone-500 mt-3 text-sm">Analyzing thematic elements and on-screen cuisine</p>
+                  <p className="text-stone-500 mt-3 text-sm">
+                    Analyzing thematic elements and on-screen cuisine
+                  </p>
                 </div>
               )}
 
-              {(appState === "RECOMMENDATIONS_READY" || appState === "RECIPE_LOADING" || appState === "RECIPE_OPEN" || appState === "TUTORIAL_LOADING" || appState === "TUTORIAL_HANDOFF") && recommendations.length > 0 && (
-                <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
-                  <div className="flex items-end justify-between mb-8 pb-4 border-b border-stone-800/60">
-                    <div>
-                      <h3 className="text-sm uppercase tracking-widest text-stone-400 font-semibold mb-2">Curated Menu</h3>
-                      <h2 className="text-2xl md:text-3xl font-bold text-stone-100 flex items-center gap-3">
-                        Recommended Pairings
-                      </h2>
+              {(appState === "RECOMMENDATIONS_READY" ||
+                appState === "RECIPE_LOADING" ||
+                appState === "RECIPE_OPEN" ||
+                appState === "TUTORIAL_LOADING" ||
+                appState === "TUTORIAL_HANDOFF") &&
+                recommendations.length > 0 && (
+                  <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
+                    <div className="flex items-end justify-between mb-8 pb-4 border-b border-stone-800/60">
+                      <div>
+                        <h3 className="text-sm uppercase tracking-widest text-stone-400 font-semibold mb-2">
+                          Curated Menu
+                        </h3>
+                        <h2 className="text-2xl md:text-3xl font-bold text-stone-100 flex items-center gap-3">
+                          Recommended Pairings
+                        </h2>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {recommendations.map((rec, i) => (
+                        <div
+                          key={i}
+                          className="group flex flex-col bg-stone-900/60 backdrop-blur-sm border border-stone-800/80 rounded-2xl overflow-hidden hover:bg-stone-900 hover:border-orange-500/40 transition-all duration-300 shadow-lg hover:shadow-orange-900/10"
+                        >
+                          <div className="p-6 flex-1 flex flex-col">
+                            <div className="flex items-start justify-between mb-4 gap-4">
+                              <h4 className="text-xl md:text-2xl font-bold text-stone-100 leading-tight group-hover:text-orange-400 transition-colors">
+                                {rec.name}
+                              </h4>
+                              <span className="flex-shrink-0 text-[10px] uppercase tracking-wider font-bold bg-stone-800/80 text-stone-300 px-2.5 py-1 rounded-md border border-stone-700/50">
+                                {formatConnectionType(rec.connectionType)}
+                              </span>
+                            </div>
+
+                            <p className="text-stone-400 text-sm md:text-base leading-relaxed mb-8 flex-1 font-light">
+                              {rec.reason}
+                            </p>
+
+                            <div className="flex items-center gap-4 text-xs font-semibold text-stone-400 uppercase tracking-wider mb-6">
+                              <span className="flex items-center gap-1.5 bg-stone-950/50 px-3 py-1.5 rounded-lg border border-stone-800/50">
+                                <Clock className="w-3.5 h-3.5 text-stone-500" />
+                                {rec.prepTimeMinutes} min
+                              </span>
+                              <span className="flex items-center gap-1.5 bg-stone-950/50 px-3 py-1.5 rounded-lg border border-stone-800/50">
+                                <ChefHat className="w-3.5 h-3.5 text-stone-500" />
+                                {rec.difficulty}
+                              </span>
+                            </div>
+
+                            <button
+                              onClick={() => handleFetchRecipe(rec)}
+                              disabled={appState !== "RECOMMENDATIONS_READY"}
+                              className="w-full flex items-center justify-between bg-stone-100 hover:bg-white disabled:opacity-50 disabled:hover:bg-stone-100 text-stone-950 font-bold py-3.5 px-5 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900"
+                            >
+                              <span>View Recipe</span>
+                              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {recommendations.map((rec, i) => (
-                      <div
-                        key={i}
-                        className="group flex flex-col bg-stone-900/60 backdrop-blur-sm border border-stone-800/80 rounded-2xl overflow-hidden hover:bg-stone-900 hover:border-orange-500/40 transition-all duration-300 shadow-lg hover:shadow-orange-900/10"
-                      >
-                        <div className="p-6 flex-1 flex flex-col">
-                          <div className="flex items-start justify-between mb-4 gap-4">
-                            <h4 className="text-xl md:text-2xl font-bold text-stone-100 leading-tight group-hover:text-orange-400 transition-colors">
-                              {rec.name}
-                            </h4>
-                            <span className="flex-shrink-0 text-[10px] uppercase tracking-wider font-bold bg-stone-800/80 text-stone-300 px-2.5 py-1 rounded-md border border-stone-700/50">
-                              {formatConnectionType(rec.connectionType)}
-                            </span>
-                          </div>
-
-                          <p className="text-stone-400 text-sm md:text-base leading-relaxed mb-8 flex-1 font-light">
-                            {rec.reason}
-                          </p>
-
-                          <div className="flex items-center gap-4 text-xs font-semibold text-stone-400 uppercase tracking-wider mb-6">
-                            <span className="flex items-center gap-1.5 bg-stone-950/50 px-3 py-1.5 rounded-lg border border-stone-800/50">
-                              <Clock className="w-3.5 h-3.5 text-stone-500" />
-                              {rec.prepTimeMinutes} min
-                            </span>
-                            <span className="flex items-center gap-1.5 bg-stone-950/50 px-3 py-1.5 rounded-lg border border-stone-800/50">
-                              <ChefHat className="w-3.5 h-3.5 text-stone-500" />
-                              {rec.difficulty}
-                            </span>
-                          </div>
-
-                          <button
-                            onClick={() => handleFetchRecipe(rec)}
-                            disabled={appState !== "RECOMMENDATIONS_READY"}
-                            className="w-full flex items-center justify-between bg-stone-100 hover:bg-white disabled:opacity-50 disabled:hover:bg-stone-100 text-stone-950 font-bold py-3.5 px-5 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-900"
-                          >
-                            <span>View Recipe</span>
-                            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
+                )}
             </div>
           </div>
         )}
@@ -475,25 +628,37 @@ export default function TasteAndWatchApp() {
             <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
               <Info className="w-8 h-8 text-red-500" />
             </div>
-            <h3 className="text-2xl font-bold text-stone-100 mb-3">Something went wrong</h3>
-            <p className="text-stone-400 text-lg leading-relaxed mb-8">{error}</p>
+            <h3 className="text-2xl font-bold text-stone-100 mb-3">
+              Something went wrong
+            </h3>
+            <p className="text-stone-400 text-lg leading-relaxed mb-8">
+              {error}
+            </p>
 
             {selectedMedia && recommendations.length > 0 ? (
-              <button onClick={() => setAppState("RECOMMENDATIONS_READY")} className="bg-stone-800 hover:bg-stone-700 text-stone-100 font-semibold px-6 py-3 rounded-full transition-colors">
+              <button
+                onClick={() => setAppState("RECOMMENDATIONS_READY")}
+                className="bg-stone-800 hover:bg-stone-700 text-stone-100 font-semibold px-6 py-3 rounded-full transition-colors"
+              >
                 Return to Recommendations
               </button>
             ) : selectedMedia ? (
-              <button onClick={() => setAppState("MEDIA_SELECTED")} className="bg-stone-800 hover:bg-stone-700 text-stone-100 font-semibold px-6 py-3 rounded-full transition-colors">
+              <button
+                onClick={() => setAppState("MEDIA_SELECTED")}
+                className="bg-stone-800 hover:bg-stone-700 text-stone-100 font-semibold px-6 py-3 rounded-full transition-colors"
+              >
                 Return to Movie Details
               </button>
             ) : (
-              <button onClick={handleReset} className="bg-stone-800 hover:bg-stone-700 text-stone-100 font-semibold px-6 py-3 rounded-full transition-colors">
+              <button
+                onClick={handleReset}
+                className="bg-stone-800 hover:bg-stone-700 text-stone-100 font-semibold px-6 py-3 rounded-full transition-colors"
+              >
                 Go to Home
               </button>
             )}
           </div>
         )}
-
       </main>
 
       {/* -----------------------------------------------------------------------
@@ -506,7 +671,6 @@ export default function TasteAndWatchApp() {
             aria-modal="true"
             className="w-full sm:max-w-5xl bg-stone-950 sm:border sm:border-stone-800 sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[95vh] sm:h-[85vh] animate-in slide-in-from-bottom-12 duration-500 relative"
           >
-
             {/* Close Button Floating */}
             <button
               onClick={closeRecipe}
@@ -517,7 +681,6 @@ export default function TasteAndWatchApp() {
             </button>
 
             <div className="flex flex-col lg:flex-row h-full overflow-y-auto lg:overflow-hidden">
-
               {/* Recipe Hero Image (Left on Desktop, Top on Mobile) */}
               <div className="w-full lg:w-5/12 relative flex-shrink-0 h-[40vh] lg:h-full bg-stone-900">
                 {selectedRecipe.imageUrl ? (
@@ -540,7 +703,9 @@ export default function TasteAndWatchApp() {
                 <div className="absolute bottom-6 left-6 right-6 lg:hidden">
                   <div className="flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-widest text-orange-400">
                     {selectedRecipe.category}
-                    {selectedRecipe.area && <span className="text-stone-500">•</span>}
+                    {selectedRecipe.area && (
+                      <span className="text-stone-500">•</span>
+                    )}
                     {selectedRecipe.area}
                   </div>
                   <h3 className="text-3xl font-bold text-white leading-tight drop-shadow-md">
@@ -552,12 +717,13 @@ export default function TasteAndWatchApp() {
               {/* Recipe Content (Right on Desktop, Bottom on Mobile) */}
               <div className="w-full lg:w-7/12 flex flex-col h-full bg-stone-950 lg:overflow-y-auto custom-scrollbar">
                 <div className="p-6 md:p-10 lg:p-12 flex-1">
-
                   {/* Desktop Title */}
                   <div className="hidden lg:block mb-10">
                     <div className="flex items-center gap-2 mb-3 text-xs font-bold uppercase tracking-widest text-orange-400">
                       {selectedRecipe.category}
-                      {selectedRecipe.area && <span className="text-stone-700">•</span>}
+                      {selectedRecipe.area && (
+                        <span className="text-stone-700">•</span>
+                      )}
                       {selectedRecipe.area}
                     </div>
                     <h3 className="text-4xl lg:text-5xl font-bold text-stone-100 leading-tight">
@@ -573,9 +739,16 @@ export default function TasteAndWatchApp() {
                       </h4>
                       <ul className="space-y-4">
                         {selectedRecipe.ingredients.map((ing, idx) => (
-                          <li key={idx} className="flex justify-between items-baseline text-sm">
-                            <span className="text-stone-300 font-medium capitalize pr-4">{ing.ingredient}</span>
-                            <span className="text-stone-500 text-right shrink-0">{ing.measure}</span>
+                          <li
+                            key={idx}
+                            className="flex justify-between items-baseline text-sm"
+                          >
+                            <span className="text-stone-300 font-medium capitalize pr-4">
+                              {ing.ingredient}
+                            </span>
+                            <span className="text-stone-500 text-right shrink-0">
+                              {ing.measure}
+                            </span>
                           </li>
                         ))}
                       </ul>
@@ -587,9 +760,12 @@ export default function TasteAndWatchApp() {
                         Instructions
                       </h4>
                       <div className="prose prose-invert prose-stone max-w-none prose-p:text-stone-400 prose-p:leading-relaxed prose-p:mb-6">
-                        {selectedRecipe.instructions.split("\n").filter(p => p.trim() !== "").map((para, idx) => (
-                          <p key={idx}>{para}</p>
-                        ))}
+                        {selectedRecipe.instructions
+                          .split("\n")
+                          .filter((p) => p.trim() !== "")
+                          .map((para, idx) => (
+                            <p key={idx}>{para}</p>
+                          ))}
                       </div>
                     </div>
                   </div>
@@ -665,7 +841,9 @@ export default function TasteAndWatchApp() {
                 {tutorialResult.title}
               </h3>
               {tutorialResult.channelTitle && (
-                <p className="text-stone-500 text-sm mb-8 font-medium">by {tutorialResult.channelTitle}</p>
+                <p className="text-stone-500 text-sm mb-8 font-medium">
+                  by {tutorialResult.channelTitle}
+                </p>
               )}
 
               <a
@@ -677,24 +855,26 @@ export default function TasteAndWatchApp() {
                 Watch on YouTube <ExternalLink className="w-4 h-4" />
               </a>
 
-              {tutorialResult.provider === "youtube_api" && selectedRecommendation && (
-                <a
-                  href={`https://www.youtube.com/results?search_query=${encodeURIComponent(selectedRecommendation.youtubeQuery)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-block text-sm text-stone-500 hover:text-stone-300 font-medium transition-colors border-b border-transparent hover:border-stone-500 pb-0.5"
-                >
-                  View more results on YouTube
-                </a>
-              )}
+              {tutorialResult.provider === "youtube_api" &&
+                selectedRecommendation && (
+                  <a
+                    href={`https://www.youtube.com/results?search_query=${encodeURIComponent(selectedRecommendation.youtubeQuery)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block text-sm text-stone-500 hover:text-stone-300 font-medium transition-colors border-b border-transparent hover:border-stone-500 pb-0.5"
+                  >
+                    View more results on YouTube
+                  </a>
+                )}
             </div>
           </div>
         </div>
       )}
 
       {/* Global styles for custom scrollbar within this page scope if needed */}
-      <style dangerouslySetInnerHTML={{
-        __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         .custom-scrollbar::-webkit-scrollbar {
           width: 8px;
         }
@@ -708,7 +888,9 @@ export default function TasteAndWatchApp() {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background-color: #44403c;
         }
-      `}} />
+      `,
+        }}
+      />
     </div>
   );
 }
