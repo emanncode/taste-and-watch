@@ -34,18 +34,10 @@ export function PairingCard({
       whileHover={{ y: -4 }}
     >
       <Card className="group h-full justify-between overflow-hidden border-stone-800/80 bg-stone-900/60 shadow-lg backdrop-blur-sm transition-colors duration-300 hover:border-orange-500/40 hover:bg-stone-900 hover:shadow-orange-900/10">
-        <CardHeader className="gap-0 p-6 flex flex-col md:flex-row">
+        <CardHeader className="md:gap-3 p-6 flex flex-col md:flex-row justify-between">
           <CardTitle className="text-xl font-bold leading-tight text-stone-100 transition-colors group-hover:text-orange-400 md:text-2xl">
             {recommendation.name}
           </CardTitle>
-          <CardAction className="col-start-1 row-start-1 justify-self-end sm:col-start-2">
-            <Badge
-              variant="outline"
-              className="h-auto border-stone-700/50 bg-stone-800/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-300"
-            >
-              {formatConnectionType(recommendation.connectionType)}
-            </Badge>
-          </CardAction>
         </CardHeader>
 
         <CardContent className="flex flex-1 flex-col px-6 pb-6">
@@ -61,6 +53,9 @@ export function PairingCard({
             <span className="flex items-center gap-1.5 rounded-lg border border-stone-800/50 bg-stone-950/50 px-3 py-1.5">
               <ChefHat className="h-3.5 w-3.5 text-stone-500" aria-hidden />
               {recommendation.difficulty}
+            </span>
+            <span className="flex items-center gap-1.5 rounded-lg border border-stone-800/50 bg-stone-950/50 px-3 py-1.5">
+              {formatConnectionType(recommendation.connectionType)}
             </span>
           </div>
 
