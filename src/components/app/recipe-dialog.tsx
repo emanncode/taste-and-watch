@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { ExternalLink, PlayCircle, UtensilsCrossed } from "lucide-react";
+import { ExternalLink, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -40,21 +40,15 @@ export function RecipeDialog({
 
         <div className="custom-scrollbar flex h-full flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
           <div className="relative h-[40vh] w-full flex-shrink-0 bg-stone-900 lg:h-full lg:w-5/12">
-            {recipe.imageUrl ? (
-              <>
+                          <>
                 <img
-                  src={recipe.imageUrl}
+                  src={recipe.imageUrl || `https://image.pollinations.ai/prompt/${encodeURIComponent(recipe.name + " delicious food recipe high quality photography")}?width=800&height=1200&nologo=true`}
                   alt={recipe.name}
                   className="h-full w-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-transparent to-transparent opacity-80 lg:hidden" />
                 <div className="absolute inset-0 hidden bg-gradient-to-r from-transparent via-transparent to-stone-950 opacity-90 lg:block" />
               </>
-            ) : (
-              <div className="flex h-full w-full items-center justify-center">
-                <UtensilsCrossed className="h-16 w-16 text-stone-800" />
-              </div>
-            )}
 
             <div className="absolute bottom-6 left-6 right-6 lg:hidden">
               <RecipeEyebrow recipe={recipe} className="mb-2" />

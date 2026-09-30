@@ -14,7 +14,7 @@ export function MediaInfoColumn({ media }: MediaInfoColumnProps) {
   return (
     <div className="flex w-full flex-col flex-shrink-0 md:w-[350px] lg:w-[400px]">
       <motion.div
-        className="relative mb-8 aspect-[2/3] w-[180px] overflow-hidden rounded-2xl border border-stone-800/50 bg-stone-900 shadow-2xl md:mx-0 md:w-full"
+        className="relative mb-8 aspect-[2/3] w-full overflow-hidden rounded-2xl border border-stone-800/50 bg-stone-900 shadow-2xl md:mx-0 md:w-full"
         variants={scaleIn}
         transition={{ duration: 0.7, ease: EASE_OUT }}
       >

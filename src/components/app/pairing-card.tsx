@@ -34,7 +34,7 @@ export function PairingCard({
       whileHover={{ y: -4 }}
     >
       <Card className="group h-full justify-between overflow-hidden border-stone-800/80 bg-stone-900/60 shadow-lg backdrop-blur-sm transition-colors duration-300 hover:border-orange-500/40 hover:bg-stone-900 hover:shadow-orange-900/10">
-        <CardHeader className="gap-0 p-6">
+        <CardHeader className="gap-0 p-6 flex flex-col md:flex-row">
           <CardTitle className="text-xl font-bold leading-tight text-stone-100 transition-colors group-hover:text-orange-400 md:text-2xl">
             {recommendation.name}
           </CardTitle>
