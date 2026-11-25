@@ -8,7 +8,7 @@ This project is a First Commit hackathon project.
 
 To prevent conflicting historical instructions, follow this strict hierarchy of authority:
 
-1. **Linear Documentation:** Current product requirements and scope live in Linear.
+1. **Notion documentation:** Current product requirements, scope, and durable decisions live in the project's canonical Notion pages. Linear is for implementation issues, bugs, and execution status.
 2. **`.agy/skills/taste-and-watch/SKILL.md`:** The authoritative AGY implementation instructions for this project. **Always refer to this file before making changes.**
 3. **`.agy/skills/taste-and-watch/decisions.md`:** The authoritative record for locked technical and product decisions.
 4. **`AGENTS.md` (this file):** Lightweight repository-level entry point.
@@ -17,6 +17,7 @@ To prevent conflicting historical instructions, follow this strict hierarchy of 
 ## Repository Rules
 
 *   **Consult the `.agy` files first:** All detailed architectural guidelines, definitions of done, and UX principles are located in `.agy/skills/taste-and-watch/SKILL.md`.
+*   **Keep the tools separated:** Update durable requirements/architecture in Notion. Link them from Linear issues rather than creating or maintaining a Linear project document. Preserve issue-scoped code reviews and implementation evidence in Linear.
 *   **Do not rely on stale specifications:** Earlier iterations of this project experimented with different APIs (e.g., Jikan, Spoonacular), client-side secrets, and varying visual directions. These are obsolete. Follow the locked architecture defined in the `.agy` decision and skill files.
 *   **Use the issue template:** When executing tasks, ensure the prompt aligns with the structure provided in `.agy/skills/taste-and-watch/issue-template.md`.
 
